@@ -2,6 +2,7 @@ package caddy
 
 import (
 	"context"
+	"crypto/sha256"
 	"fmt"
 	"io"
 	"log"
@@ -363,6 +364,43 @@ func (m *Manager) Upgrade(targetVer string) (string, error) {
 		return currentVer, fmt.Errorf("download write: %w", err)
 	}
 	f.Close()
+
+	checksumURL := fmt.Sprintf(
+		"https://github.com/caddyserver/caddy/releases/download/v%s/caddy_%s_checksums.txt",
+		targetVer, targetVer,
+	)
+	checksumResp, err := http.Get(checksumURL)
+	if err != nil {
+		return currentVer, fmt.Errorf("checksum download failed: %w", err)
+	}
+	defer checksumResp.Body.Close()
+	if checksumResp.StatusCode != http.StatusOK {
+		return currentVer, fmt.Errorf("checksum download returned HTTP %d", checksumResp.StatusCode)
+	}
+	checksumBody, err := io.ReadAll(checksumResp.Body)
+	if err != nil {
+		return currentVer, fmt.Errorf("read checksum file: %w", err)
+	}
+	archiveName := fmt.Sprintf("caddy_%s_linux_%s.tar.gz", targetVer, goArch)
+	expected := ""
+	for _, line := range strings.Split(string(checksumBody), "\n") {
+		fields := strings.Fields(line)
+		if len(fields) == 2 && fields[1] == archiveName {
+			expected = fields[0]
+			break
+		}
+	}
+	if expected == "" {
+		return currentVer, fmt.Errorf("checksum entry not found for %s", archiveName)
+	}
+	archiveData, err := os.ReadFile(tarPath)
+	if err != nil {
+		return currentVer, fmt.Errorf("read downloaded archive: %w", err)
+	}
+	actual := fmt.Sprintf("%x", sha256.Sum256(archiveData))
+	if actual != expected {
+		return currentVer, fmt.Errorf("checksum mismatch for %s", archiveName)
+	}
 
 	// Extract
 	extractCmd := exec.Command("tar", "-xzf", tarPath, "-C", tmpDir, "caddy")

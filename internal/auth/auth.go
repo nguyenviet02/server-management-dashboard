@@ -109,9 +109,12 @@ func Middleware(secret string, opts ...MiddlewareOption) gin.HandlerFunc {
 			}
 		}
 
-		// 2. Fall back to query parameter ONLY for WebSocket upgrades.
+		// 2. For WebSocket upgrades, prefer Sec-WebSocket-Protocol before query fallback.
 		if tokenStr == "" && isWebSocketUpgrade(c.Request) {
-			tokenStr = c.Query("token")
+			tokenStr = parseWebSocketProtocolToken(c.Request)
+			if tokenStr == "" {
+				tokenStr = c.Query("token")
+			}
 		}
 
 		if tokenStr == "" {
@@ -217,4 +220,15 @@ func validateAPIToken(c *gin.Context, db *gorm.DB, plaintext string) error {
 func isWebSocketUpgrade(r *http.Request) bool {
 	return strings.EqualFold(r.Header.Get("Upgrade"), "websocket") &&
 		strings.Contains(strings.ToLower(r.Header.Get("Connection")), "upgrade")
+}
+
+func parseWebSocketProtocolToken(r *http.Request) string {
+	for _, part := range strings.Split(r.Header.Get("Sec-WebSocket-Protocol"), ",") {
+		protocol := strings.TrimSpace(part)
+		if protocol == "" || protocol == "webcasa-auth" {
+			continue
+		}
+		return protocol
+	}
+	return ""
 }

@@ -1,9 +1,16 @@
 package deploy
 
 import (
+	"crypto/hmac"
+	"crypto/sha256"
+	"crypto/subtle"
+	"encoding/hex"
 	"encoding/json"
+	"fmt"
+	"io"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
 )
@@ -296,8 +303,23 @@ func (h *Handler) GetBuildLog(c *gin.Context) {
 // Webhook POST /api/plugins/deploy/webhook/:token
 func (h *Handler) Webhook(c *gin.Context) {
 	token := c.Param("token")
-	if err := h.svc.HandleWebhook(token); err != nil {
+	project, err := h.svc.HandleWebhook(token)
+	if err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		return
+	}
+
+	body, err := io.ReadAll(io.LimitReader(c.Request.Body, 1<<20))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to read webhook body"})
+		return
+	}
+	if err := verifyWebhookSignature(c.GetHeader("X-Hub-Signature-256"), body, project, h.svc); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	if err := h.svc.Build(project.ID); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true, "message": "build triggered"})
@@ -337,14 +359,41 @@ func (h *Handler) GetWebhookInfo(c *gin.Context) {
 		return
 	}
 	var project Project
-	if err := h.svc.db.Select("id, webhook_token").First(&project, id).Error; err != nil {
+	if err := h.svc.db.Select("id, webhook_token, webhook_secret").First(&project, id).Error; err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "project not found"})
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"webhook_token": project.WebhookToken})
+	secret, err := h.svc.DecryptWebhookSecret(&project)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"webhook_token": project.WebhookToken, "webhook_secret": secret})
 }
 
 // ClearCache DELETE /api/plugins/deploy/projects/:id/cache
+func verifyWebhookSignature(header string, body []byte, project *Project, svc *Service) error {
+	if !strings.HasPrefix(header, "sha256=") {
+		return fmt.Errorf("missing webhook signature")
+	}
+	providedHex := strings.TrimPrefix(header, "sha256=")
+	provided, err := hex.DecodeString(providedHex)
+	if err != nil {
+		return fmt.Errorf("invalid webhook signature")
+	}
+	secret, err := svc.DecryptWebhookSecret(project)
+	if err != nil {
+		return err
+	}
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write(body)
+	expected := mac.Sum(nil)
+	if subtle.ConstantTimeCompare(provided, expected) != 1 {
+		return fmt.Errorf("invalid webhook signature")
+	}
+	return nil
+}
+
 func (h *Handler) ClearCache(c *gin.Context) {
 	id, err := parseUintParam(c, "id")
 	if err != nil {

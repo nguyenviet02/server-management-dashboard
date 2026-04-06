@@ -65,6 +65,7 @@ export default function ProjectDetail() {
     const [manualDiagnosis, setManualDiagnosis] = useState(null)
     const [expandedDeps, setExpandedDeps] = useState({})
     const [webhookToken, setWebhookToken] = useState('')
+    const [webhookSecret, setWebhookSecret] = useState('')
     const [cronJobs, setCronJobs] = useState([])
     const [cronDialogOpen, setCronDialogOpen] = useState(false)
     const [cronForm, setCronForm] = useState({ name: '', schedule: '', command: '', enabled: true })
@@ -100,10 +101,10 @@ export default function ProjectDetail() {
             const res = await deployAPI.getProject(id)
             setProject(res.data)
             setEnvVars(res.data.env_vars || [])
-            // Fetch webhook token separately (it has json:"-" on the model).
             try {
-                const tokenRes = await deployAPI.getWebhookToken(id)
-                setWebhookToken(tokenRes.data?.webhook_token || '')
+                const webhookRes = await deployAPI.getWebhookInfo(id)
+                setWebhookToken(webhookRes.data?.webhook_token || '')
+                setWebhookSecret(webhookRes.data?.webhook_secret || '')
             } catch { /* non-critical */ }
         } catch (e) {
             console.error(e)
@@ -432,6 +433,11 @@ export default function ProjectDetail() {
         if (!webhookToken) return
         const url = `${window.location.origin}/api/plugins/deploy/webhook/${webhookToken}`
         navigator.clipboard.writeText(url)
+    }
+
+    const copyWebhookSecret = () => {
+        if (!webhookSecret) return
+        navigator.clipboard.writeText(webhookSecret)
     }
 
     if (loading) return <Text color="gray">{t('common.loading')}</Text>
@@ -978,6 +984,17 @@ export default function ProjectDetail() {
                                 </Code>
                                 <Tooltip content={t('common.copy')}>
                                     <IconButton variant="ghost" size="1" onClick={copyWebhookUrl}>
+                                        <Copy size={14} />
+                                    </IconButton>
+                                </Tooltip>
+                            </Flex>
+                            <Text size="2" weight="medium">{t('deploy.webhook_secret')}</Text>
+                            <Flex gap="2" align="center">
+                                <Code style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    {webhookSecret || '...'}
+                                </Code>
+                                <Tooltip content={t('common.copy')}>
+                                    <IconButton variant="ghost" size="1" onClick={copyWebhookSecret}>
                                         <Copy size={14} />
                                     </IconButton>
                                 </Tooltip>

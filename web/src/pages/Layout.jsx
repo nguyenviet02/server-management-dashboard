@@ -66,10 +66,10 @@ export default function Layout() {
     )
     const [sidebarOpen, setSidebarOpen] = useState(false)
 
-    const currentLang = i18n.language?.startsWith('zh') ? 'zh' : 'en'
+    const currentLang = i18n.language?.startsWith('vi') ? 'vi' : 'en'
 
     const toggleLang = () => {
-        const next = currentLang === 'zh' ? 'en' : 'zh'
+        const next = currentLang === 'vi' ? 'en' : 'vi'
         i18n.changeLanguage(next)
     }
 
@@ -102,7 +102,7 @@ export default function Layout() {
             .map((item) => ({
                 to: item.to,
                 icon: resolveIcon(item.icon),
-                label: currentLang === 'zh' && item.labelZh ? item.labelZh : item.label,
+                label: item.label,
             }))
     }, [pluginNavItems, currentLang])
 
@@ -112,7 +112,7 @@ export default function Layout() {
         if (!item) return null
         return {
             icon: resolveIcon(item.icon),
-            label: currentLang === 'zh' && item.labelZh ? item.labelZh : item.label,
+            label: item.label,
         }
     }, [pluginNavItems, currentLang])
 
@@ -213,7 +213,7 @@ export default function Layout() {
                     style={{ marginBottom: 4 }}
                 >
                     <Languages size={16} />
-                    <span>{currentLang === 'zh' ? 'EN' : '中文'}</span>
+                    <span>{currentLang === 'vi' ? 'EN' : 'VI'}</span>
                 </button>
 
                 {/* Theme toggle */}

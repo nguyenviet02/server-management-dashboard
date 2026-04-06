@@ -107,10 +107,10 @@ function PowCaptcha({ onVerified, onReset }) {
 // ============ Language Switcher ============
 function LanguageSwitcher() {
     const { i18n } = useTranslation()
-    const currentLang = i18n.language?.startsWith('zh') ? 'zh' : 'en'
+    const currentLang = i18n.language?.startsWith('vi') ? 'vi' : 'en'
 
     const toggle = () => {
-        const next = currentLang === 'zh' ? 'en' : 'zh'
+        const next = currentLang === 'vi' ? 'en' : 'vi'
         i18n.changeLanguage(next)
     }
 
@@ -131,7 +131,7 @@ function LanguageSwitcher() {
             }}
         >
             <Languages size={14} />
-            {currentLang === 'zh' ? 'EN' : '中文'}
+            {currentLang === 'vi' ? 'EN' : 'VI'}
         </button>
     )
 }

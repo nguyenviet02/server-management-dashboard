@@ -12,7 +12,7 @@ import {
     AreaChart, Area, LineChart, Line, XAxis, YAxis,
     CartesianGrid, Tooltip, ResponsiveContainer,
 } from 'recharts'
-import { monitoringAPI } from '../api/index.js'
+import { monitoringAPI, openAuthenticatedWebSocket } from '../api/index.js'
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -199,7 +199,7 @@ export default function MonitoringDashboard({ embedded }) {
         let reconnectTimer
 
         function connect() {
-            ws = new WebSocket(url)
+            ws = openAuthenticatedWebSocket(url)
             wsRef.current = ws
 
             ws.onmessage = (evt) => {

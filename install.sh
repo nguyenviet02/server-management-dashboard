@@ -336,6 +336,12 @@ install_caddy() {
 
     info "Downloading from ${CADDY_URL}..."
     curl -fsSL "$CADDY_URL" -o "${CADDY_TMP}/caddy.tar.gz" || fatal "Failed to download Caddy v${CADDY}"
+    curl -fsSL "https://github.com/caddyserver/caddy/releases/download/v${CADDY}/caddy_${CADDY}_checksums.txt" -o "${CADDY_TMP}/checksums.txt" || fatal "Failed to download Caddy checksums"
+    local expected_caddy actual_caddy
+    expected_caddy=$(awk '/caddy_'"${CADDY}"'_linux_'"${CADDY_ARCH}"'\.tar\.gz$/ {print $1}' "${CADDY_TMP}/checksums.txt")
+    [[ -n "$expected_caddy" ]] || fatal "Missing Caddy checksum entry"
+    actual_caddy=$(shasum -a 256 "${CADDY_TMP}/caddy.tar.gz" | awk '{print $1}')
+    [[ "$actual_caddy" == "$expected_caddy" ]] || fatal "Caddy checksum mismatch"
 
     tar -xzf "${CADDY_TMP}/caddy.tar.gz" -C "$CADDY_TMP" || fatal "Failed to extract Caddy archive"
 
@@ -389,12 +395,12 @@ install_prebuilt() {
         exit 1
     }
 
-    # Verify checksum if available
+    # Verify checksum and fail closed.
     local SHA_URL="${URL}.sha256"
-    if wget -q -O "/tmp/${TARBALL}.sha256" "$SHA_URL" 2>/dev/null; then
-        info "Verifying checksum..."
-        cd /tmp && sha256sum -c "${TARBALL}.sha256" && success "Checksum verified" || warn "Checksum mismatch!"
-    fi
+    wget -q -O "/tmp/${TARBALL}.sha256" "$SHA_URL" 2>/dev/null || fatal "Missing checksum for ${TARBALL}"
+    info "Verifying checksum..."
+    (cd /tmp && sha256sum -c "${TARBALL}.sha256") >/dev/null || fatal "Checksum mismatch for ${TARBALL}"
+    success "Checksum verified"
 
     # Extract
     info "Extracting..."

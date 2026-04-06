@@ -319,6 +319,22 @@ cmd_caddy_upgrade() {
         error "Download failed"
         exit 1
     fi
+    if ! curl -fsSL "https://github.com/caddyserver/caddy/releases/download/v${target_ver}/caddy_${target_ver}_checksums.txt" -o "${tmpdir}/checksums.txt"; then
+        error "Checksum download failed"
+        exit 1
+    fi
+    local expected
+    expected=$(awk '/caddy_'"${target_ver}"'_linux_'"${arch}"'\.tar\.gz$/ {print $1}' "${tmpdir}/checksums.txt")
+    if [[ -z "$expected" ]]; then
+        error "Checksum entry not found"
+        exit 1
+    fi
+    local actual
+    actual=$(shasum -a 256 "${tmpdir}/caddy.tar.gz" | awk '{print $1}')
+    if [[ "$actual" != "$expected" ]]; then
+        error "Checksum mismatch"
+        exit 1
+    fi
 
     tar -xzf "${tmpdir}/caddy.tar.gz" -C "$tmpdir" caddy
 

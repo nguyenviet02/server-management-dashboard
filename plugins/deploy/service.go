@@ -142,12 +142,21 @@ func (s *Service) GetProject(id uint) (*Project, error) {
 
 // CreateProject creates a new project.
 func (s *Service) CreateProject(project *Project) error {
-	// Generate webhook token
+	// Generate webhook token and signing secret
 	token := make([]byte, 16)
 	if _, err := rand.Read(token); err != nil {
 		return fmt.Errorf("generate webhook token: %w", err)
 	}
+	secret := make([]byte, 32)
+	if _, err := rand.Read(secret); err != nil {
+		return fmt.Errorf("generate webhook secret: %w", err)
+	}
 	project.WebhookToken = hex.EncodeToString(token)
+	encWebhookSecret, err := crypto.Encrypt(hex.EncodeToString(secret), s.jwtSecret)
+	if err != nil {
+		return fmt.Errorf("encrypt webhook secret: %w", err)
+	}
+	project.WebhookSecret = encWebhookSecret
 
 	// Encode env vars
 	if len(project.EnvVarList) > 0 {
@@ -950,12 +959,23 @@ func (s *Service) GetActiveLogWriter(projectID uint) *LogWriter {
 }
 
 // HandleWebhook processes a Git webhook trigger.
-func (s *Service) HandleWebhook(token string) error {
+func (s *Service) HandleWebhook(token string) (*Project, error) {
 	var project Project
 	if err := s.db.Where("webhook_token = ? AND auto_deploy = ?", token, true).First(&project).Error; err != nil {
-		return fmt.Errorf("project not found or auto-deploy disabled")
+		return nil, fmt.Errorf("project not found or auto-deploy disabled")
 	}
-	return s.Build(project.ID)
+	return &project, nil
+}
+
+func (s *Service) DecryptWebhookSecret(project *Project) (string, error) {
+	if project.WebhookSecret == "" {
+		return "", fmt.Errorf("webhook secret not configured")
+	}
+	secret, err := crypto.Decrypt(project.WebhookSecret, s.jwtSecret)
+	if err != nil {
+		return "", fmt.Errorf("decrypt webhook secret: %w", err)
+	}
+	return secret, nil
 }
 
 // DecryptDeployKey decrypts the project's stored deploy key.

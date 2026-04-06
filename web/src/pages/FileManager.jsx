@@ -6,7 +6,7 @@ import {
     FileText, FileCode, Image, Music, Video, Database, Package as PackageIcon
 } from 'lucide-react'
 import { useNavigate } from 'react-router'
-import { fileManagerAPI } from '../api/index.js'
+import { api, fileManagerAPI } from '../api/index.js'
 import { useTranslation } from 'react-i18next'
 
 function getFileIcon(name, isDir) {
@@ -224,13 +224,18 @@ export default function FileManager() {
     }
 
     // Download
-    const handleDownload = (file) => {
-        const token = localStorage.getItem('token')
-        const url = fileManagerAPI.download(file.path)
-        const a = document.createElement('a')
-        a.href = url + `&token=${token}`
-        a.download = file.name
-        a.click()
+    const handleDownload = async (file) => {
+        try {
+            const res = await api.get(fileManagerAPI.download(file.path), { responseType: 'blob' })
+            const url = URL.createObjectURL(res.data)
+            const a = document.createElement('a')
+            a.href = url
+            a.download = file.name
+            a.click()
+            URL.revokeObjectURL(url)
+        } catch (e) {
+            setError(e.response?.data?.error || e.message)
+        }
     }
 
     // Breadcrumbs

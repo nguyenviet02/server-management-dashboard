@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { Box, Flex, Text, Card, Badge, Heading, Button, Separator, Dialog, TextArea, TextField, Tabs } from '@radix-ui/themes'
 import { Container, Play, Square, RefreshCw, Trash2, FileText, Plus, Download, Server, Search, Radio, Upload, X, Loader2, Star, Settings } from 'lucide-react'
 import { useNavigate } from 'react-router'
-import { dockerAPI } from '../api/index.js'
+import { dockerAPI, openAuthenticatedWebSocket } from '../api/index.js'
 import { useTranslation } from 'react-i18next'
 import DockerRequired from '../components/DockerRequired.jsx'
 // Docker — Compose Stacks management (simplified view)
@@ -109,8 +109,7 @@ export default function DockerOverview() {
     const startLogStream = (id) => {
         if (wsRef.current) wsRef.current.close()
         const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        const token = localStorage.getItem('token')
-        const ws = new WebSocket(`${proto}//${window.location.host}/api/plugins/docker/stacks/${id}/logs/ws?tail=100&token=${token}`)
+        const ws = openAuthenticatedWebSocket(`${proto}//${window.location.host}/api/plugins/docker/stacks/${id}/logs/ws?tail=100`)
         wsRef.current = ws
         let buffer = ''
         ws.onmessage = (e) => {

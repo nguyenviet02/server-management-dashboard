@@ -21,6 +21,7 @@ type Project struct {
 	CurrentBuild  int       `gorm:"default:0" json:"current_build"`
 	AutoDeploy    bool      `gorm:"default:false" json:"auto_deploy"`
 	WebhookToken  string    `gorm:"size:64;uniqueIndex" json:"-"` // never exposed via API
+	WebhookSecret string    `gorm:"type:text" json:"-"`           // encrypted webhook signing secret
 	HostID        uint      `gorm:"default:0" json:"host_id"` // associated reverse proxy host
 	EnvVars       string    `gorm:"type:text" json:"-"`        // JSON-encoded env vars (encrypted)
 	ErrorMsg      string    `gorm:"type:text" json:"error_msg"`

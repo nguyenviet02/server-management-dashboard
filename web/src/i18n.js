@@ -3,7 +3,7 @@ import { initReactI18next } from 'react-i18next'
 import LanguageDetector from 'i18next-browser-languagedetector'
 
 import en from './locales/en.json'
-import zh from './locales/zh.json'
+import vi from './locales/vi.json'
 
 i18n
     .use(LanguageDetector)
@@ -11,7 +11,7 @@ i18n
     .init({
         resources: {
             en: { translation: en },
-            zh: { translation: zh },
+            vi: { translation: vi },
         },
         fallbackLng: 'en',
         interpolation: {

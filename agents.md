@@ -21,7 +21,7 @@ WebCasa (https://web.casa) is an AI-First lightweight server control panel built
 1. **Caddyfile over Admin API** — Human-readable config, file-based persistence, atomic writes (temp → validate → backup → rename), `caddy reload` is graceful (zero-downtime)
 2. **Plugin system** — Go Interface + compile-time registration. Plugins get: API routes, DB tables (prefixed `plugin_{id}_*`), data directory, EventBus, ConfigStore, CoreAPI access
 3. **Two-tier auth** — `protected` routes (any logged-in user) vs `adminOnly` routes (admin role required). Plugins get both router groups
-4. **i18n** — react-i18next with `en.json` / `zh.json`. Plugin names/descriptions have i18n keys in `plugins.names.*` / `plugins.descriptions.*`
+4. **i18n** — react-i18next with `en.json` / `vi.json`. Plugin names/descriptions have i18n keys in `plugins.names.*` / `plugins.descriptions.*`
 5. **Security** — ALTCHA PoW on setup/login, bcrypt passwords, AES-GCM encrypted secrets (TOTP, deploy keys, API keys), constant-time token comparison
 
 ## Directory Map
@@ -66,7 +66,7 @@ plugins/
   php/                           -> PHP-FPM and FrankenPHP runtime management
 web/
   src/pages/                     -> React page components (30+ pages)
-  src/locales/                   -> i18n translation files (en.json, zh.json)
+  src/locales/                   -> i18n translation files (en.json, vi.json)
   src/stores/                    -> Zustand stores (auth, pluginNav)
   src/api/index.js               -> Axios API client with all endpoint definitions
 ```

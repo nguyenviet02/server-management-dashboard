@@ -1,5 +1,3 @@
-[English](./README.md) | [简体中文](./README_ZH.md)
-
 <div align="center">
 
 # WebCasa

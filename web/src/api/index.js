@@ -1,14 +1,21 @@
 import axios from 'axios'
 
-const api = axios.create({
+export const api = axios.create({
     baseURL: '/api',
     timeout: 15000,
     headers: { 'Content-Type': 'application/json' },
 })
 
+const getToken = () => localStorage.getItem('token')
+
+export const openAuthenticatedWebSocket = (url) => {
+    const token = getToken()
+    return token ? new WebSocket(url, ['webcasa-auth', token]) : new WebSocket(url)
+}
+
 // Attach JWT token to every request
 api.interceptors.request.use((config) => {
-    const token = localStorage.getItem('token')
+    const token = getToken()
     if (token) {
         config.headers.Authorization = `Bearer ${token}`
     }
@@ -92,7 +99,7 @@ export const caddyAPI = {
 export const logAPI = {
     get: (params) => api.get('/logs', { params }),
     files: () => api.get('/logs/files'),
-    downloadUrl: (type) => `/api/logs/download?type=${type}`,
+    downloadUrl: (type) => `/logs/download?type=${type}`,
     system: (params) => api.get('/logs/system', { params }),
 }
 
@@ -228,8 +235,8 @@ export const deployAPI = {
     getCacheInfo: (id) => api.get(`/plugins/deploy/projects/${id}/cache`),
     clearCache: (id) => api.delete(`/plugins/deploy/projects/${id}/cache`),
 
-    // Webhook token (admin only)
-    getWebhookToken: (id) => api.get(`/plugins/deploy/projects/${id}/webhook`),
+    // Webhook info (admin only)
+    getWebhookInfo: (id) => api.get(`/plugins/deploy/projects/${id}/webhook`),
 
     // Environment cloning
     cloneEnv: (targetId, sourceId) => api.post(`/plugins/deploy/projects/${targetId}/clone-env`, { source_id: sourceId }),
@@ -288,7 +295,7 @@ export const fileManagerAPI = {
         headers: { 'Content-Type': 'multipart/form-data' },
         timeout: 300000,
     }),
-    download: (path) => `/api/plugins/filemanager/download?path=${encodeURIComponent(path)}`,
+    download: (path) => `/plugins/filemanager/download?path=${encodeURIComponent(path)}`,
     mkdir: (path) => api.post('/plugins/filemanager/mkdir', { path }),
     delete: (paths) => api.delete('/plugins/filemanager/delete', { data: { paths } }),
     rename: (old_path, new_path) => api.post('/plugins/filemanager/rename', { old_path, new_path }),
@@ -298,8 +305,7 @@ export const fileManagerAPI = {
     extract: (path, dest) => api.post('/plugins/filemanager/extract', { path, dest }),
     terminalWsUrl: (cols, rows) => {
         const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        const token = localStorage.getItem('token')
-        return `${proto}//${window.location.host}/api/plugins/filemanager/terminal/ws?cols=${cols}&rows=${rows}&token=${token}`
+        return `${proto}//${window.location.host}/api/plugins/filemanager/terminal/ws?cols=${cols}&rows=${rows}`
     },
 }
 
@@ -335,8 +341,7 @@ export const databaseAPI = {
 
     instanceLogsWsUrl: (id) => {
         const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        const token = localStorage.getItem('token')
-        return `${proto}//${window.location.host}/api/plugins/database/instances/${id}/logs/ws?tail=100&token=${token}`
+        return `${proto}//${window.location.host}/api/plugins/database/instances/${id}/logs/ws?tail=100`
     },
 }
 
@@ -347,8 +352,7 @@ export const monitoringAPI = {
     getContainers: () => api.get('/plugins/monitoring/metrics/containers'),
     metricsWsUrl: () => {
         const proto = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-        const token = localStorage.getItem('token')
-        return `${proto}//${window.location.host}/api/plugins/monitoring/metrics/ws?token=${token}`
+        return `${proto}//${window.location.host}/api/plugins/monitoring/metrics/ws`
     },
     listAlertRules: () => api.get('/plugins/monitoring/alerts'),
     createAlertRule: (data) => api.post('/plugins/monitoring/alerts', data),

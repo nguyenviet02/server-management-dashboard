@@ -14,7 +14,7 @@ import {
 } from 'lucide-react'
 import { QRCodeSVG } from 'qrcode.react'
 import {
-    caddyAPI, configAPI, settingAPI, authAPI, groupAPI, tagAPI,
+    api, caddyAPI, configAPI, settingAPI, authAPI, groupAPI, tagAPI,
     userAPI, logAPI, auditAPI, aiAPI, dnsProviderAPI, certificateAPI,
     deployAPI, backupAPI, notifyAPI,
 } from '../api/index.js'
@@ -880,10 +880,18 @@ function CaddyLogsPanel() {
     useEffect(() => { fetchLogFiles(); fetchLogs() }, [logType, lines])
 
     const handleSearch = (e) => { e.preventDefault(); fetchLogs() }
-    const handleDownload = () => {
-        const token = localStorage.getItem('token')
-        const url = logAPI.downloadUrl(logType)
-        const link = document.createElement('a'); link.href = `${url}&token=${token}`; link.download = ''; link.click()
+    const handleDownload = async () => {
+        try {
+            const res = await api.get(logAPI.downloadUrl(logType), { responseType: 'blob' })
+            const url = URL.createObjectURL(res.data)
+            const link = document.createElement('a')
+            link.href = url
+            link.download = `${logType}.log`
+            link.click()
+            URL.revokeObjectURL(url)
+        } catch {
+            setLogLines([])
+        }
     }
 
     return (
@@ -1765,7 +1773,9 @@ function CertificatesTab() {
             <AlertDialog.Root open={!!deleteTarget} onOpenChange={(o) => !o && setDeleteTarget(null)}>
                 <AlertDialog.Content maxWidth="400px">
                     <AlertDialog.Title>{t('cert.delete_title')}</AlertDialog.Title>
-                    <AlertDialog.Description dangerouslySetInnerHTML={{ __html: t('cert.confirm_delete_desc', { name: deleteTarget?.name }) }} />
+                    <AlertDialog.Description>
+                        {t('cert.confirm_delete_desc_prefix')} <strong>{deleteTarget?.name}</strong>? {t('cert.confirm_delete_desc_suffix')}
+                    </AlertDialog.Description>
                     <Flex gap="3" mt="4" justify="end">
                         <AlertDialog.Cancel><Button variant="soft" color="gray">{t('common.cancel')}</Button></AlertDialog.Cancel>
                         <AlertDialog.Action><Button color="red" onClick={handleDelete}>{t('common.delete')}</Button></AlertDialog.Action>
