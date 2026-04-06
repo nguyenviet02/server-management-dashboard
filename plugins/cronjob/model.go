@@ -86,3 +86,26 @@ type UpdateTaskRequest struct {
 	MaxRetries      *int     `json:"max_retries"`
 	NotifyOnFailure *bool    `json:"notify_on_failure"`
 }
+
+// CrontabEntry represents a single editable entry from the user's crontab.
+type CrontabEntry struct {
+	ID         string `json:"id"`
+	LineNumber int    `json:"line_number"`
+	Schedule   string `json:"schedule"`
+	Command    string `json:"command"`
+	Enabled    bool   `json:"enabled"`
+}
+
+// CrontabResponse is the API response for the current user crontab.
+type CrontabResponse struct {
+	Entries            []CrontabEntry `json:"entries"`
+	SourceHash         string         `json:"source_hash"`
+	HasUnmanagedLines  bool           `json:"has_unmanaged_lines"`
+	UnmanagedLineCount int            `json:"unmanaged_line_count"`
+}
+
+// SaveCrontabRequest overwrites the current user crontab.
+type SaveCrontabRequest struct {
+	Entries     []CrontabEntry `json:"entries"`
+	SourceHash  string         `json:"source_hash"`
+}

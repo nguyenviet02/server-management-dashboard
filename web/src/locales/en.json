@@ -1656,6 +1656,8 @@
         "status_running": "Running",
         "no_tasks": "No cron jobs configured yet",
         "no_logs": "No execution logs yet",
+        "add_first_entry": "Add first entry",
+        "unmanaged_warning": "{{count}} unmanaged crontab line(s) were ignored while loading. Saving here will overwrite the full crontab.",
         "create_success": "Cron job created",
         "update_success": "Cron job updated",
         "delete_success": "Cron job deleted",

@@ -43,6 +43,9 @@ func (p *Plugin) Init(ctx *pluginpkg.Context) error {
 	r := ctx.Router      // JWT required
 	a := ctx.AdminRouter // JWT + admin
 
+	r.GET("/crontab", p.handler.GetCrontab)
+	a.PUT("/crontab", p.handler.SaveCrontab)
+
 	r.GET("/tasks", p.handler.ListTasks)
 	r.GET("/tasks/:id", p.handler.GetTask)
 	a.POST("/tasks", p.handler.CreateTask)

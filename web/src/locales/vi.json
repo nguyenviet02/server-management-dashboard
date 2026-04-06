@@ -1656,6 +1656,8 @@
         "status_running": "Đang chạy",
         "no_tasks": "Chưa có cron job nào được cấu hình",
         "no_logs": "Chưa có nhật ký thực thi",
+        "add_first_entry": "Thêm dòng đầu tiên",
+        "unmanaged_warning": "Đã bỏ qua {{count}} dòng crontab không hỗ trợ khi tải. Lưu tại đây sẽ ghi đè toàn bộ crontab.",
         "create_success": "Đã tạo cron job",
         "update_success": "Đã cập nhật cron job",
         "delete_success": "Đã xóa cron job",

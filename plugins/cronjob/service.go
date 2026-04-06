@@ -3,9 +3,13 @@ package cronjob
 import (
 	"bytes"
 	"context"
+	"crypto/sha256"
+	"errors"
 	"fmt"
 	"log/slog"
+	"os"
 	"os/exec"
+	"strings"
 	"sync"
 	"time"
 
@@ -15,6 +19,11 @@ import (
 )
 
 const maxOutputBytes = 64 * 1024 // 64KB
+
+var (
+	ErrCrontabConflict    = errors.New("crontab changed since it was loaded")
+	ErrCrontabUnavailable = errors.New("crontab command is not available")
+)
 
 // Service manages cron job lifecycle, scheduling, and execution.
 type Service struct {
@@ -30,6 +39,7 @@ type Service struct {
 	cancelFunc context.CancelFunc // cancels all running task contexts on Stop()
 	taskCtx    context.Context    // parent context for all task executions
 	subscribed bool               // guard: EventBus handlers registered only once
+	crontabMu  sync.Mutex
 }
 
 // NewService creates a new cron job service.
@@ -152,6 +162,192 @@ func (s *Service) Stop() {
 	default:
 		close(s.stopCh)
 	}
+}
+
+// ── Crontab ──
+
+func (s *Service) GetCrontab() (*CrontabResponse, error) {
+	s.crontabMu.Lock()
+	defer s.crontabMu.Unlock()
+
+	raw, err := s.readCrontab()
+	if err != nil {
+		return nil, err
+	}
+	return parseCrontab(raw), nil
+}
+
+func (s *Service) SaveCrontab(req *SaveCrontabRequest) (*CrontabResponse, error) {
+	s.crontabMu.Lock()
+	defer s.crontabMu.Unlock()
+
+	currentRaw, err := s.readCrontab()
+	if err != nil {
+		return nil, err
+	}
+	current := parseCrontab(currentRaw)
+	if req.SourceHash != current.SourceHash {
+		return nil, ErrCrontabConflict
+	}
+
+	raw, err := buildCrontab(req.Entries)
+	if err != nil {
+		return nil, err
+	}
+	if err := installCrontab(raw); err != nil {
+		return nil, err
+	}
+	return parseCrontab(raw), nil
+}
+
+func (s *Service) readCrontab() (string, error) {
+	if _, err := exec.LookPath("crontab"); err != nil {
+		return "", ErrCrontabUnavailable
+	}
+
+	cmd := exec.Command("crontab", "-l")
+	output, err := cmd.CombinedOutput()
+	if err == nil {
+		return strings.TrimRight(string(output), "\n"), nil
+	}
+
+	msg := strings.ToLower(string(output))
+	if strings.Contains(msg, "no crontab") {
+		return "", nil
+	}
+
+	return "", fmt.Errorf("read crontab: %w", err)
+}
+
+func parseCrontab(raw string) *CrontabResponse {
+	trimmed := strings.TrimSpace(raw)
+	if trimmed == "" {
+		return &CrontabResponse{Entries: []CrontabEntry{}, SourceHash: hashCrontab("")}
+	}
+
+	lines := strings.Split(trimmed, "\n")
+	entries := make([]CrontabEntry, 0, len(lines))
+	unmanagedCount := 0
+
+	for i, line := range lines {
+		entry, ok := parseCrontabLine(line, i+1)
+		if !ok {
+			unmanagedCount++
+			continue
+		}
+		entries = append(entries, entry)
+	}
+
+	return &CrontabResponse{
+		Entries:            entries,
+		SourceHash:         hashCrontab(trimmed),
+		HasUnmanagedLines:  unmanagedCount > 0,
+		UnmanagedLineCount: unmanagedCount,
+	}
+}
+
+func parseCrontabLine(line string, lineNumber int) (CrontabEntry, bool) {
+	trimmed := strings.TrimSpace(line)
+	if trimmed == "" {
+		return CrontabEntry{}, false
+	}
+
+	enabled := true
+	if strings.HasPrefix(trimmed, "#") {
+		enabled = false
+		trimmed = strings.TrimSpace(strings.TrimPrefix(trimmed, "#"))
+		if trimmed == "" {
+			return CrontabEntry{}, false
+		}
+	}
+
+	schedule, command, ok := splitCrontabLine(trimmed)
+	if !ok {
+		return CrontabEntry{}, false
+	}
+
+	return CrontabEntry{
+		ID:         fmt.Sprintf("line-%d", lineNumber),
+		LineNumber: lineNumber,
+		Schedule:   schedule,
+		Command:    command,
+		Enabled:    enabled,
+	}, true
+}
+
+func splitCrontabLine(line string) (string, string, bool) {
+	fields := strings.Fields(line)
+	if len(fields) < 2 {
+		return "", "", false
+	}
+	if strings.HasPrefix(fields[0], "@") {
+		schedule := fields[0]
+		command := strings.Join(fields[1:], " ")
+		if command == "" {
+			return "", "", false
+		}
+		return schedule, command, true
+	}
+	if len(fields) < 6 {
+		return "", "", false
+	}
+	return strings.Join(fields[:5], " "), strings.Join(fields[5:], " "), true
+}
+
+func buildCrontab(entries []CrontabEntry) (string, error) {
+	if len(entries) == 0 {
+		return "", nil
+	}
+
+	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
+	lines := make([]string, 0, len(entries))
+	for i, entry := range entries {
+		schedule := strings.TrimSpace(entry.Schedule)
+		command := strings.TrimSpace(entry.Command)
+		if schedule == "" {
+			return "", fmt.Errorf("entry %d schedule is required", i+1)
+		}
+		if command == "" {
+			return "", fmt.Errorf("entry %d command is required", i+1)
+		}
+		if _, err := parser.Parse(schedule); err != nil {
+			return "", fmt.Errorf("entry %d has invalid schedule: %w", i+1, err)
+		}
+		line := schedule + " " + command
+		if !entry.Enabled {
+			line = "# " + line
+		}
+		lines = append(lines, line)
+	}
+	return strings.Join(lines, "\n"), nil
+}
+
+func installCrontab(raw string) error {
+	tmpFile, err := os.CreateTemp("", "webcasa-crontab-*.txt")
+	if err != nil {
+		return fmt.Errorf("create temp crontab: %w", err)
+	}
+	defer os.Remove(tmpFile.Name())
+
+	if _, err := tmpFile.WriteString(raw); err != nil {
+		tmpFile.Close()
+		return fmt.Errorf("write temp crontab: %w", err)
+	}
+	if err := tmpFile.Close(); err != nil {
+		return fmt.Errorf("close temp crontab: %w", err)
+	}
+
+	cmd := exec.Command("crontab", tmpFile.Name())
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("install crontab: %s", strings.TrimSpace(string(output)))
+	}
+	return nil
+}
+
+func hashCrontab(raw string) string {
+	sum := sha256.Sum256([]byte(raw))
+	return fmt.Sprintf("%x", sum[:])
 }
 
 // ── CRUD ──

@@ -1656,6 +1656,8 @@
         "status_running": "运行中",
         "no_tasks": "暂无定时任务",
         "no_logs": "暂无执行日志",
+        "add_first_entry": "添加第一条任务",
+        "unmanaged_warning": "加载时忽略了 {{count}} 条未受支持的 crontab 行。在这里保存会覆盖整个 crontab。",
         "create_success": "定时任务已创建",
         "update_success": "定时任务已更新",
         "delete_success": "定时任务已删除",

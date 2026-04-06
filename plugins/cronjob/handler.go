@@ -1,6 +1,7 @@
 package cronjob
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
 
@@ -15,6 +16,40 @@ type Handler struct {
 // NewHandler creates a new handler.
 func NewHandler(svc *Service) *Handler {
 	return &Handler{svc: svc}
+}
+
+// GetCrontab returns the current user crontab as editable rows.
+func (h *Handler) GetCrontab(c *gin.Context) {
+	crontab, err := h.svc.GetCrontab()
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, crontab)
+}
+
+// SaveCrontab overwrites the current user crontab.
+func (h *Handler) SaveCrontab(c *gin.Context) {
+	var req SaveCrontabRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	crontab, err := h.svc.SaveCrontab(&req)
+	if err != nil {
+		status := http.StatusBadRequest
+		switch {
+		case errors.Is(err, ErrCrontabConflict):
+			status = http.StatusConflict
+		case errors.Is(err, ErrCrontabUnavailable):
+			status = http.StatusInternalServerError
+		}
+		c.JSON(status, gin.H{"error": err.Error()})
+		return
+	}
+
+	c.JSON(http.StatusOK, crontab)
 }
 
 // ListTasks returns all cron tasks, optionally filtered by tag.
