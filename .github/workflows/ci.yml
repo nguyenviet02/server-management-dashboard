@@ -1,0 +1,589 @@
+name: CI — Build & Integration Test
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  PANEL_PORT: 39921
+
+jobs:
+  # ============================================================
+  # Job 1: Build everything (Go binary + Frontend dist)
+  # ============================================================
+  build:
+    name: Build & Unit Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+          cache-dependency-path: web/package-lock.json
+
+      # --- Go ---
+      - name: Go — Vet
+        run: go vet ./...
+
+      - name: Go — Unit tests
+        run: go test ./... -v -count=1 -timeout 900s
+
+      # --- Frontend ---
+      - name: Frontend — Install & Build
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      # --- Go binary (with frontend built) ---
+      - name: Go — Build binary
+        run: |
+          VERSION=$(cat VERSION | tr -d '[:space:]')
+          CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=${VERSION}" -o webcasa .
+          echo "✅ Binary built"
+
+      # --- Upload for integration job ---
+      - name: Upload binary + frontend
+        uses: actions/upload-artifact@v4
+        with:
+          name: webcasa-build
+          path: |
+            webcasa
+            web/dist/
+          retention-days: 1
+
+  # ============================================================
+  # Job 2: Integration Test (no Go needed, Node.js used for ALTCHA PoW)
+  # Downloads pre-built binary + dist from Job 1
+  # ============================================================
+  integration:
+    name: Integration Test
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # --- Download pre-built artifacts from build job ---
+      - name: Download build artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: webcasa-build
+
+      - name: Prepare binary
+        run: chmod +x webcasa
+
+      # --- Install Caddy (tar.gz from GitHub Releases) ---
+      - name: Install Caddy
+        run: |
+          CADDY_VER=$(grep '^CADDY=' VERSIONS | cut -d= -f2)
+          CADDY_ARCH=$([ "$(uname -m)" = "x86_64" ] && echo "amd64" || echo "arm64")
+          curl -fsSL "https://github.com/caddyserver/caddy/releases/download/v${CADDY_VER}/caddy_${CADDY_VER}_linux_${CADDY_ARCH}.tar.gz" | tar -xz -C /usr/local/bin caddy
+          sudo chmod +x /usr/local/bin/caddy
+          sudo setcap 'cap_net_bind_service=+ep' /usr/local/bin/caddy 2>/dev/null || true
+          caddy version
+
+      # --- Setup directories & start panel ---
+      - name: Setup and start WebCasa
+        run: |
+          mkdir -p data/logs data/backups
+          export WEBCASA_PORT=$PANEL_PORT
+          # JWT secret auto-generated on first run via data/.jwt_secret
+          export WEBCASA_CADDY_BIN=$(which caddy)
+          export WEBCASA_DATA_DIR=./data
+          export WEBCASA_LOG_DIR=./data/logs
+          export GIN_MODE=release
+          ./webcasa > /tmp/webcasa.log 2>&1 &
+          echo $! > /tmp/webcasa.pid
+          echo "PID: $(cat /tmp/webcasa.pid)"
+
+          # Wait for API to be ready
+          echo "Waiting for API..."
+          for i in $(seq 1 30); do
+            if curl -s http://localhost:$PANEL_PORT/api/auth/need-setup > /dev/null 2>&1; then
+              echo "✅ API ready after ${i}s"
+              break
+            fi
+            sleep 1
+          done
+
+          # Check if still running
+          if ! kill -0 $(cat /tmp/webcasa.pid) 2>/dev/null; then
+            echo "❌ WebCasa process died!"
+            cat /tmp/webcasa.log
+            exit 1
+          fi
+
+          # Debug: show need-setup response
+          echo "=== need-setup response ==="
+          curl -s http://localhost:$PANEL_PORT/api/auth/need-setup | jq .
+
+      # ==================== API Tests ====================
+
+      - name: 'Test: Create admin account (with ALTCHA PoW)'
+        run: |
+          # Solve ALTCHA PoW for setup
+          CHALLENGE_JSON=$(curl -sf http://localhost:$PANEL_PORT/api/auth/altcha-challenge)
+          CHALLENGE=$(echo "$CHALLENGE_JSON" | jq -r '.challenge')
+          SALT=$(echo "$CHALLENGE_JSON" | jq -r '.salt')
+          ALGORITHM=$(echo "$CHALLENGE_JSON" | jq -r '.algorithm')
+          SIGNATURE=$(echo "$CHALLENGE_JSON" | jq -r '.signature')
+
+          NUMBER=$(SALT="$SALT" CHALLENGE="$CHALLENGE" node -e "
+            const crypto = require('crypto');
+            const salt = process.env.SALT;
+            const challenge = process.env.CHALLENGE;
+            for(let i=0; i<=50000; i++) {
+              if(crypto.createHash('sha256').update(salt + i).digest('hex') === challenge) {
+                console.log(i);
+                process.exit(0);
+              }
+            }
+            process.exit(1);
+          ")
+
+          PAYLOAD_JSON=$(jq -n \
+            --arg alg "$ALGORITHM" \
+            --arg chal "$CHALLENGE" \
+            --argjson num "$NUMBER" \
+            --arg salt "$SALT" \
+            --arg sig "$SIGNATURE" \
+            '{algorithm: $alg, challenge: $chal, number: $num, salt: $salt, signature: $sig}')
+          ALTCHA_B64=$(echo -n "$PAYLOAD_JSON" | base64 -w 0)
+
+          HTTP_CODE=$(curl -s -o /tmp/setup_response.json -w "%{http_code}" \
+            -X POST http://localhost:$PANEL_PORT/api/auth/setup \
+            -H 'Content-Type: application/json' \
+            -d "{\"username\":\"admin\",\"password\":\"testpassword123\",\"altcha\":\"$ALTCHA_B64\"}")
+          echo "HTTP $HTTP_CODE"
+          cat /tmp/setup_response.json | jq .
+          [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "201" ] || exit 1
+          echo "✅ Admin setup succeeded"
+
+      - name: 'Test: Login'
+        run: |
+          # Solve ALTCHA PoW for login
+          CHALLENGE_JSON=$(curl -sf http://localhost:$PANEL_PORT/api/auth/altcha-challenge)
+          CHALLENGE=$(echo "$CHALLENGE_JSON" | jq -r '.challenge')
+          SALT=$(echo "$CHALLENGE_JSON" | jq -r '.salt')
+          ALGORITHM=$(echo "$CHALLENGE_JSON" | jq -r '.algorithm')
+          SIGNATURE=$(echo "$CHALLENGE_JSON" | jq -r '.signature')
+
+          NUMBER=$(SALT="$SALT" CHALLENGE="$CHALLENGE" node -e "
+            const crypto = require('crypto');
+            const salt = process.env.SALT;
+            const challenge = process.env.CHALLENGE;
+            for(let i=0; i<=50000; i++) {
+              if(crypto.createHash('sha256').update(salt + i).digest('hex') === challenge) {
+                console.log(i);
+                process.exit(0);
+              }
+            }
+            console.error('PoW solve failed within 50000 iterations');
+            process.exit(1);
+          ")
+          echo "Solved PoW: $NUMBER"
+
+          PAYLOAD_JSON=$(jq -n \
+            --arg alg "$ALGORITHM" \
+            --arg chal "$CHALLENGE" \
+            --argjson num "$NUMBER" \
+            --arg salt "$SALT" \
+            --arg sig "$SIGNATURE" \
+            '{algorithm: $alg, challenge: $chal, number: $num, salt: $salt, signature: $sig}')
+          ALTCHA_B64=$(echo -n "$PAYLOAD_JSON" | base64 -w 0)
+
+          RESPONSE=$(curl -sf -X POST http://localhost:$PANEL_PORT/api/auth/login \
+            -H 'Content-Type: application/json' \
+            -d "{\"username\":\"admin\",\"password\":\"testpassword123\",\"altcha\":\"$ALTCHA_B64\"}")
+          TOKEN=$(echo "$RESPONSE" | jq -r '.token')
+          echo "TOKEN=$TOKEN" >> $GITHUB_ENV
+          echo "✅ Login succeeded"
+
+      - name: 'Test: Create proxy host'
+        run: |
+          RESPONSE=$(curl -sf -X POST http://localhost:$PANEL_PORT/api/hosts \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "domain": "localhost:8888",
+              "tls_enabled": false,
+              "http_redirect": false,
+              "websocket": false,
+              "upstreams": [{"address": "localhost:9999"}]
+            }')
+          HOST_ID=$(echo "$RESPONSE" | jq -r '.id')
+          echo "HOST_ID=$HOST_ID" >> $GITHUB_ENV
+          echo "✅ Host created (ID: $HOST_ID)"
+
+      - name: 'Test: List hosts'
+        run: |
+          COUNT=$(curl -sf http://localhost:$PANEL_PORT/api/hosts \
+            -H "Authorization: Bearer $TOKEN" | jq '.total')
+          [ "$COUNT" -ge 1 ] || exit 1
+          echo "✅ Host list OK (total: $COUNT)"
+
+      - name: 'Test: Caddyfile generated correctly'
+        run: |
+          CONTENT=$(curl -sf http://localhost:$PANEL_PORT/api/caddy/caddyfile \
+            -H "Authorization: Bearer $TOKEN" | jq -r '.content')
+          echo "$CONTENT"
+          echo "$CONTENT" | grep -q "localhost:8888" || exit 1
+          echo "$CONTENT" | grep -q "reverse_proxy" || exit 1
+          echo "✅ Caddyfile contains host config"
+
+      - name: 'Test: Caddy validates Caddyfile'
+        run: |
+          caddy validate --config data/Caddyfile
+          echo "✅ caddy validate passed"
+
+      - name: 'Test: Start Caddy via API'
+        run: |
+          HTTP_CODE=$(curl -s -o /tmp/caddy_start.json -w "%{http_code}" \
+            -X POST http://localhost:$PANEL_PORT/api/caddy/start \
+            -H "Authorization: Bearer $TOKEN")
+          echo "HTTP $HTTP_CODE"
+          cat /tmp/caddy_start.json | jq . 2>/dev/null || cat /tmp/caddy_start.json
+          if [ "$HTTP_CODE" != "200" ]; then
+            echo "⚠️  Caddy start returned $HTTP_CODE — may not work in CI"
+            echo "CADDY_RUNNING=false" >> $GITHUB_ENV
+          else
+            sleep 2
+            echo "CADDY_RUNNING=true" >> $GITHUB_ENV
+            echo "✅ Caddy started"
+          fi
+
+      - name: 'Test: Caddy is running'
+        if: env.CADDY_RUNNING == 'true'
+        run: |
+          curl -sf http://localhost:$PANEL_PORT/api/caddy/status \
+            -H "Authorization: Bearer $TOKEN" | jq -e '.running == true' > /dev/null
+          echo "✅ Caddy is running"
+
+      - name: 'Test: Reload Caddy'
+        if: env.CADDY_RUNNING == 'true'
+        run: |
+          curl -sf -X POST http://localhost:$PANEL_PORT/api/caddy/reload \
+            -H "Authorization: Bearer $TOKEN" | jq .
+          echo "✅ Caddy reloaded"
+
+      - name: 'Test: Toggle host off → removed from Caddyfile'
+        run: |
+          curl -sf -X PATCH "http://localhost:$PANEL_PORT/api/hosts/$HOST_ID/toggle" \
+            -H "Authorization: Bearer $TOKEN" > /dev/null
+
+          CONTENT=$(curl -sf http://localhost:$PANEL_PORT/api/caddy/caddyfile \
+            -H "Authorization: Bearer $TOKEN" | jq -r '.content')
+          if echo "$CONTENT" | grep -q "localhost:8888"; then
+            echo "❌ Disabled host should not be in Caddyfile"; exit 1
+          fi
+          echo "✅ Host disabled — removed from Caddyfile"
+
+          curl -sf -X PATCH "http://localhost:$PANEL_PORT/api/hosts/$HOST_ID/toggle" \
+            -H "Authorization: Bearer $TOKEN" > /dev/null
+          echo "✅ Host re-enabled"
+
+      - name: 'Test: Export config'
+        run: |
+          curl -sf http://localhost:$PANEL_PORT/api/config/export \
+            -H "Authorization: Bearer $TOKEN" | jq '.hosts | length'
+          echo "✅ Config export OK"
+
+      - name: 'Test: Delete host'
+        run: |
+          curl -sf -X DELETE "http://localhost:$PANEL_PORT/api/hosts/$HOST_ID" \
+            -H "Authorization: Bearer $TOKEN" > /dev/null
+          COUNT=$(curl -sf http://localhost:$PANEL_PORT/api/hosts \
+            -H "Authorization: Bearer $TOKEN" | jq '.total')
+          [ "$COUNT" -eq 0 ] || exit 1
+          echo "✅ Host deleted, list empty"
+
+      # ==================== Phase 6 API Tests ====================
+
+      - name: 'Test: Clone host'
+        run: |
+          # Create a host to clone
+          RESPONSE=$(curl -sf -X POST http://localhost:$PANEL_PORT/api/hosts \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "domain": "clone-source.test:8888",
+              "tls_enabled": false,
+              "http_redirect": false,
+              "websocket": true,
+              "upstreams": [{"address": "localhost:3000"}]
+            }')
+          SRC_ID=$(echo "$RESPONSE" | jq -r '.id')
+
+          # Clone it
+          CLONE=$(curl -sf -X POST "http://localhost:$PANEL_PORT/api/hosts/$SRC_ID/clone" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{"domain":"clone-copy.test:8888"}')
+          CLONE_DOMAIN=$(echo "$CLONE" | jq -r '.domain')
+          CLONE_WS=$(echo "$CLONE" | jq -r '.websocket')
+          [ "$CLONE_DOMAIN" = "clone-copy.test:8888" ] || exit 1
+          [ "$CLONE_WS" = "true" ] || exit 1
+          CLONE_ID=$(echo "$CLONE" | jq -r '.id')
+
+          # Cleanup
+          curl -sf -X DELETE "http://localhost:$PANEL_PORT/api/hosts/$SRC_ID" -H "Authorization: Bearer $TOKEN" > /dev/null
+          curl -sf -X DELETE "http://localhost:$PANEL_PORT/api/hosts/$CLONE_ID" -H "Authorization: Bearer $TOKEN" > /dev/null
+          echo "✅ Host clone OK"
+
+      - name: 'Test: Group CRUD'
+        run: |
+          # Create
+          GRP=$(curl -sf -X POST http://localhost:$PANEL_PORT/api/groups \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{"name":"ci-test-group"}')
+          GRP_ID=$(echo "$GRP" | jq -r '.id')
+          [ -n "$GRP_ID" ] && [ "$GRP_ID" != "null" ] || exit 1
+
+          # List
+          GRP_COUNT=$(curl -sf http://localhost:$PANEL_PORT/api/groups \
+            -H "Authorization: Bearer $TOKEN" | jq 'length')
+          [ "$GRP_COUNT" -ge 1 ] || exit 1
+
+          # Update
+          curl -sf -X PUT "http://localhost:$PANEL_PORT/api/groups/$GRP_ID" \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{"name":"ci-test-group-updated"}' > /dev/null
+
+          # Delete
+          curl -sf -X DELETE "http://localhost:$PANEL_PORT/api/groups/$GRP_ID" \
+            -H "Authorization: Bearer $TOKEN" > /dev/null
+          echo "✅ Group CRUD OK"
+
+      - name: 'Test: Tag CRUD'
+        run: |
+          # Create
+          TAG=$(curl -sf -X POST http://localhost:$PANEL_PORT/api/tags \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{"name":"ci-test-tag","color":"#ff0000"}')
+          TAG_ID=$(echo "$TAG" | jq -r '.id')
+          [ -n "$TAG_ID" ] && [ "$TAG_ID" != "null" ] || exit 1
+
+          # List
+          TAG_COUNT=$(curl -sf http://localhost:$PANEL_PORT/api/tags \
+            -H "Authorization: Bearer $TOKEN" | jq 'length')
+          [ "$TAG_COUNT" -ge 1 ] || exit 1
+
+          # Delete
+          curl -sf -X DELETE "http://localhost:$PANEL_PORT/api/tags/$TAG_ID" \
+            -H "Authorization: Bearer $TOKEN" > /dev/null
+          echo "✅ Tag CRUD OK"
+
+      - name: 'Test: Template CRUD'
+        run: |
+          # Create
+          TPL=$(curl -sf -X POST http://localhost:$PANEL_PORT/api/templates \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{
+              "name": "ci-test-template",
+              "description": "CI test template",
+              "config": "{\"host_type\":\"proxy\",\"tls_enabled\":true,\"http_redirect\":true,\"websocket\":false,\"upstreams\":[{\"address\":\"localhost:8080\"}]}"
+            }')
+          TPL_ID=$(echo "$TPL" | jq -r '.id')
+          [ -n "$TPL_ID" ] && [ "$TPL_ID" != "null" ] || exit 1
+
+          # List
+          TPL_COUNT=$(curl -sf http://localhost:$PANEL_PORT/api/templates \
+            -H "Authorization: Bearer $TOKEN" | jq '.templates | length')
+          [ "$TPL_COUNT" -ge 1 ] || exit 1
+
+          # Delete
+          curl -sf -X DELETE "http://localhost:$PANEL_PORT/api/templates/$TPL_ID" \
+            -H "Authorization: Bearer $TOKEN" > /dev/null
+          echo "✅ Template CRUD OK"
+
+      - name: 'Test: DNS check'
+        run: |
+          RESPONSE=$(curl -s -o /tmp/dns_response.json -w "%{http_code}" \
+            "http://localhost:$PANEL_PORT/api/dns-check?domain=example.com" \
+            -H "Authorization: Bearer $TOKEN")
+          echo "HTTP $RESPONSE"
+          cat /tmp/dns_response.json | jq .
+          # DNS check should return 200 regardless of resolution result
+          [ "$RESPONSE" = "200" ] || exit 1
+          echo "✅ DNS check OK"
+
+      - name: 'Test: Stop Caddy'
+        if: env.CADDY_RUNNING == 'true'
+        run: |
+          curl -sf -X POST http://localhost:$PANEL_PORT/api/caddy/stop \
+            -H "Authorization: Bearer $TOKEN" > /dev/null
+          sleep 1
+          STATUS=$(curl -sf http://localhost:$PANEL_PORT/api/caddy/status \
+            -H "Authorization: Bearer $TOKEN" | jq -r '.running')
+          [ "$STATUS" = "false" ] || exit 1
+          echo "✅ Caddy stopped"
+
+      # ==================== Plugin Integration Tests ====================
+
+      - name: 'Test: Plugin list >= 4'
+        run: |
+          PLUGIN_COUNT=$(curl -sf http://localhost:$PANEL_PORT/api/plugins \
+            -H "Authorization: Bearer $TOKEN" | jq '.plugins | length')
+          echo "Plugin count: $PLUGIN_COUNT"
+          [ "$PLUGIN_COUNT" -ge 4 ] || exit 1
+          echo "✅ Plugin list OK (>= 4 plugins)"
+
+      - name: 'Test: Frontend manifests >= 4'
+        run: |
+          # Enable core plugins (only AI is enabled by default on fresh install)
+          for pid in docker deploy filemanager monitoring backup; do
+              curl -sf -X POST "http://localhost:$PANEL_PORT/api/plugins/$pid/enable" \
+                  -H "Authorization: Bearer $TOKEN" > /dev/null 2>&1 || true
+          done
+          MANIFEST_COUNT=$(curl -sf http://localhost:$PANEL_PORT/api/plugins/frontend-manifests \
+            -H "Authorization: Bearer $TOKEN" | jq '. | length')
+          echo "Manifest count: $MANIFEST_COUNT"
+          [ "$MANIFEST_COUNT" -ge 4 ] || exit 1
+          echo "✅ Frontend manifests OK"
+
+      - name: 'Test: File Manager CRUD'
+        run: |
+          # File Manager default root_path is /home. Paths in the API are
+          # relative to that root. Use "runner/ci-fm-test" so the absolute
+          # path becomes /home/runner/ci-fm-test (writable by the runner user).
+
+          # mkdir
+          curl -sf -X POST http://localhost:$PANEL_PORT/api/plugins/filemanager/mkdir \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{"path":"runner/ci-fm-test"}' | jq -e '.status == "ok"' > /dev/null
+          echo "  mkdir OK"
+
+          # write
+          curl -sf -X POST http://localhost:$PANEL_PORT/api/plugins/filemanager/write \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{"path":"runner/ci-fm-test/hello.txt","content":"CI Test Content"}' | jq -e '.status == "ok"' > /dev/null
+          echo "  write OK"
+
+          # read
+          CONTENT=$(curl -sf "http://localhost:$PANEL_PORT/api/plugins/filemanager/read?path=runner/ci-fm-test/hello.txt" \
+            -H "Authorization: Bearer $TOKEN" | jq -r '.content')
+          [ "$CONTENT" = "CI Test Content" ] || exit 1
+          echo "  read OK"
+
+          # rename
+          curl -sf -X POST http://localhost:$PANEL_PORT/api/plugins/filemanager/rename \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{"old_path":"runner/ci-fm-test/hello.txt","new_path":"runner/ci-fm-test/renamed.txt"}' | jq -e '.status == "ok"' > /dev/null
+          echo "  rename OK"
+
+          # info
+          NAME=$(curl -sf "http://localhost:$PANEL_PORT/api/plugins/filemanager/info?path=runner/ci-fm-test/renamed.txt" \
+            -H "Authorization: Bearer $TOKEN" | jq -r '.name')
+          [ "$NAME" = "renamed.txt" ] || exit 1
+          echo "  info OK"
+
+          # delete
+          curl -sf -X DELETE http://localhost:$PANEL_PORT/api/plugins/filemanager/delete \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{"paths":["runner/ci-fm-test"]}' | jq -e '.status == "ok"' > /dev/null
+          echo "  delete OK"
+
+          echo "✅ File Manager CRUD passed"
+
+      - name: 'Test: Deploy plugin frameworks'
+        run: |
+          FW_COUNT=$(curl -sf http://localhost:$PANEL_PORT/api/plugins/deploy/frameworks \
+            -H "Authorization: Bearer $TOKEN" | jq '. | length')
+          echo "Frameworks: $FW_COUNT"
+          [ "$FW_COUNT" -ge 1 ] || exit 1
+          echo "✅ Deploy frameworks OK"
+
+      - name: 'Test: Deploy plugin projects list'
+        run: |
+          curl -sf http://localhost:$PANEL_PORT/api/plugins/deploy/projects \
+            -H "Authorization: Bearer $TOKEN" | jq -e 'type == "array"' > /dev/null
+          echo "✅ Deploy projects list OK"
+
+      - name: 'Test: AI config get/update'
+        run: |
+          # Get config
+          curl -sf http://localhost:$PANEL_PORT/api/plugins/ai/config \
+            -H "Authorization: Bearer $TOKEN" | jq -e '.base_url != null' > /dev/null
+          echo "  AI config get OK"
+
+          # Update config
+          curl -sf -X PUT http://localhost:$PANEL_PORT/api/plugins/ai/config \
+            -H "Authorization: Bearer $TOKEN" \
+            -H 'Content-Type: application/json' \
+            -d '{"base_url":"https://api.test.com","model":"test-model"}' | jq -e '.status == "ok"' > /dev/null
+          echo "  AI config update OK"
+
+          echo "✅ AI config OK"
+
+      - name: 'Test: Docker info (graceful)'
+        run: |
+          HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" \
+            http://localhost:$PANEL_PORT/api/plugins/docker/info \
+            -H "Authorization: Bearer $TOKEN")
+          echo "Docker info HTTP: $HTTP_CODE"
+          # Docker daemon may not be available in CI, 200 or 500 both acceptable
+          [ "$HTTP_CODE" = "200" ] || [ "$HTTP_CODE" = "500" ] || exit 1
+          echo "✅ Docker info endpoint exists"
+
+      # --- Diagnostics on failure ---
+      - name: Show logs on failure
+        if: failure()
+        run: |
+          echo "=== WebCasa process log ==="
+          cat /tmp/webcasa.log 2>/dev/null || echo "No log file"
+          echo ""
+          echo "=== Caddyfile ==="
+          cat data/Caddyfile 2>/dev/null || echo "Not found"
+          echo ""
+          echo "=== API setup response ==="
+          cat /tmp/setup_response.json 2>/dev/null || echo "No response file"
+          echo ""
+          echo "=== Data directory ==="
+          ls -la data/ 2>/dev/null || echo "No data dir"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          kill $(cat /tmp/webcasa.pid) 2>/dev/null || true
+          caddy stop 2>/dev/null || true
+
+  # ============================================================
+  # Job 3: Install Script Test
+  # Reuses scripts/test-install.sh — same code locally and in CI
+  # Runs install.sh --from-source inside Docker containers
+  # ============================================================
+  install-test:
+    name: Install Script Test
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js (for ALTCHA PoW solver on host)
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      - name: Run install verification (AlmaLinux 10)
+        run: bash scripts/test-install.sh alma

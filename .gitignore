@@ -1,0 +1,70 @@
+# === Go ===
+webcasa
+*.exe
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+vendor/
+coverage.out
+coverage.html
+
+# === Node / Frontend ===
+node_modules/
+web/node_modules/
+web/dist/
+web/.vite/
+
+# === Data & Runtime ===
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+Caddyfile
+Caddyfile.tmp
+*.bak
+*.log
+*.pid
+
+# === Security / Secrets ===
+.env
+.env.*
+*.pem
+*.key
+*.crt
+.jwt_secret
+
+# === IDE ===
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# === AI Tools ===
+.claude/
+.kiro/
+.qwen/
+.cursor/
+.windsurf/
+.augment/
+.aider*
+.codeium/
+.continue/
+.agent/
+.agents/
+
+# === OS ===
+.Trash-*
+desktop.ini
+
+# === Docker (local test artifacts) ===
+docker-compose.override.yml
+
+# === Temp ===
+tmp/
+*.tmp

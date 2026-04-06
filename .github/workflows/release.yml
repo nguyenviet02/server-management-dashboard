@@ -1,0 +1,80 @@
+name: Release — Build & Publish
+
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: write
+
+env:
+  GITHUB_REPO: web-casa/webcasa
+
+jobs:
+  release:
+    name: Build & Release
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+            suffix: linux-amd64
+          - goos: linux
+            goarch: arm64
+            suffix: linux-arm64
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: '1.26'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+
+      # --- Build Frontend ---
+      - name: Build frontend
+        working-directory: web
+        run: |
+          npm ci
+          npm run build
+
+      # --- Build Go Binary ---
+      - name: Build binary
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+          CGO_ENABLED: ${{ matrix.goarch == 'amd64' && '1' || '0' }}
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          go build \
+            -ldflags="-s -w -X main.Version=${VERSION}" \
+            -o webcasa .
+          echo "✅ Built webcasa for ${{ matrix.suffix }}"
+
+      # --- Package Tarball ---
+      - name: Package
+        run: |
+          RELEASE_DIR="webcasa-${{ matrix.suffix }}"
+          mkdir -p "${RELEASE_DIR}/web"
+          cp webcasa "${RELEASE_DIR}/"
+          cp -r web/dist "${RELEASE_DIR}/web/"
+          cp install.sh "${RELEASE_DIR}/"
+          tar -czf "${RELEASE_DIR}.tar.gz" "${RELEASE_DIR}"
+          sha256sum "${RELEASE_DIR}.tar.gz" > "${RELEASE_DIR}.tar.gz.sha256"
+          echo "✅ Packaged ${RELEASE_DIR}.tar.gz"
+
+      # --- Upload Release ---
+      - name: Upload to Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            webcasa-${{ matrix.suffix }}.tar.gz
+            webcasa-${{ matrix.suffix }}.tar.gz.sha256
+          generate_release_notes: true
