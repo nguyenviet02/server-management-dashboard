@@ -498,7 +498,7 @@ export default function Dashboard() {
             )}
 
             {/* ── Row 4: Recent Activity + News ── */}
-            <Grid columns={{ initial: '1', md: '2' }} gap="4" mb="5">
+            <Grid columns={{ initial: '1' }} gap="4" mb="5">
                 {/* Recent Activity */}
                 <Card style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)' }}>
                     <Flex align="center" gap="2" mb="3">
@@ -527,56 +527,6 @@ export default function Dashboard() {
                         ) : (
                             <Text size="2" color="gray" style={{ display: 'block', textAlign: 'center', padding: '16px 0' }}>
                                 {t('dashboard.no_recent_activity')}
-                            </Text>
-                        )
-                    ) : (
-                        <Flex align="center" justify="center" py="4"><Spinner size="2" /></Flex>
-                    )}
-                </Card>
-
-                {/* Official News */}
-                <Card style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)' }}>
-                    <Flex align="center" gap="2" mb="3">
-                        <ExternalLink size={16} style={{ color: 'var(--green-9)' }} />
-                        <Heading size="3">{t('dashboard.official_news')}</Heading>
-                    </Flex>
-                    {news ? (
-                        news.length > 0 ? (
-                            <Box>
-                                {news.slice(0, 5).map((item, i) => {
-                                    const typeColor = {
-                                        release: 'green', announcement: 'blue', security: 'red',
-                                    }[item.type] || 'gray'
-                                    return (
-                                        <Flex key={i} justify="between" align="center" py="2"
-                                            style={{ borderBottom: '1px solid var(--cp-border-subtle)' }}
-                                        >
-                                            <Box style={{ minWidth: 0, flex: 1 }}>
-                                                <Flex align="center" gap="2">
-                                                    <Badge color={typeColor} size="1">{item.type}</Badge>
-                                                    {item.url ? (
-                                                        <a href={item.url} target="_blank" rel="noopener noreferrer"
-                                                            style={{ color: 'var(--cp-text)', textDecoration: 'none', fontSize: 'var(--font-size-2)' }}
-                                                            onMouseEnter={e => e.target.style.textDecoration = 'underline'}
-                                                            onMouseLeave={e => e.target.style.textDecoration = 'none'}
-                                                        >
-                                                            {item.title}
-                                                        </a>
-                                                    ) : (
-                                                        <Text size="2" style={{ color: 'var(--cp-text)' }}>{item.title}</Text>
-                                                    )}
-                                                </Flex>
-                                            </Box>
-                                            <Text size="1" color="gray" style={{ flexShrink: 0, marginLeft: 8 }}>
-                                                {item.date}
-                                            </Text>
-                                        </Flex>
-                                    )
-                                })}
-                            </Box>
-                        ) : (
-                            <Text size="2" color="gray" style={{ display: 'block', textAlign: 'center', padding: '16px 0' }}>
-                                {t('dashboard.news_unavailable')}
                             </Text>
                         )
                     ) : (
