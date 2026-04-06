@@ -38,8 +38,7 @@ export default function DockerOverview() {
             if (stackRes.status === 'fulfilled') setStacks(stackRes.value.data?.stacks || [])
             if (infoRes.status === 'fulfilled') setInfo(infoRes.value.data)
             if (containerRes.status === 'fulfilled') {
-                const all = containerRes.value.data?.containers || []
-                setContainers(all.filter(c => !c.labels?.['com.docker.compose.project']))
+                setContainers(containerRes.value.data?.containers || [])
             }
         } catch { /* ignore */ } finally { setLoading(false) }
     }, [])
@@ -266,62 +265,68 @@ export default function DockerOverview() {
                 </Flex>
             )}
 
-            {/* Standalone Containers */}
+            {/* Containers */}
             {containers.length > 0 && (
                 <>
                     <Separator size="4" my="4" />
                     <Flex align="center" gap="2" mb="3">
                         <Container size={18} />
-                        <Heading size="4">{t('docker.standalone_containers')}</Heading>
+                        <Heading size="4">{t('docker.containers')}</Heading>
                         <Badge variant="soft" size="1">{containers.length}</Badge>
                     </Flex>
                     <Flex direction="column" gap="3">
-                        {containers.map((c) => (
-                            <Card key={c.id} style={{ padding: 16 }}>
-                                <Flex align="center" justify="between" wrap="wrap" gap="2">
-                                    <Flex direction="column" gap="1" style={{ flex: 1, minWidth: 200 }}>
-                                        <Flex align="center" gap="2">
-                                            <Text weight="bold" size="3">{c.name || c.id}</Text>
-                                            <Badge color={c.state === 'running' ? 'green' : c.state === 'paused' ? 'orange' : 'gray'} variant="soft" size="1">{c.state}</Badge>
-                                        </Flex>
-                                        <Flex gap="3">
+                        {containers.map((c) => {
+                            const publishedPorts = (c.ports || []).filter(p => p.host_port)
+                            const portText = publishedPorts.length > 0
+                                ? publishedPorts.map(p => `${p.host_port}:${p.container_port}${p.protocol && p.protocol !== 'tcp' ? `/${p.protocol}` : ''}`).join(', ')
+                                : '—'
+
+                            return (
+                                <Card key={c.id} style={{ padding: 16 }}>
+                                    <Flex align="center" justify="between" wrap="wrap" gap="2">
+                                        <Flex direction="column" gap="1" style={{ flex: 1, minWidth: 200 }}>
+                                            <Flex align="center" gap="2" wrap="wrap">
+                                                <Text weight="bold" size="3">{c.name || c.id}</Text>
+                                                <Badge color={c.state === 'running' ? 'green' : c.state === 'paused' ? 'orange' : 'gray'} variant="soft" size="1">{c.state}</Badge>
+                                                {c.labels?.['com.docker.compose.project'] && (
+                                                    <Badge color="blue" variant="soft" size="1">
+                                                        {c.labels['com.docker.compose.project']}
+                                                    </Badge>
+                                                )}
+                                            </Flex>
                                             <Text size="1" color="gray">{c.image}</Text>
-                                            {c.ports && c.ports.length > 0 && (
-                                                <Text size="1" color="gray">
-                                                    {c.ports.filter(p => p.host_port).map(p => `${p.host_port}:${p.container_port}`).join(', ')}
-                                                </Text>
-                                            )}
+                                            <Text size="1" color="gray">{t('docker.port_mappings')}: {portText}</Text>
+                                            <Text size="1" color="gray">{c.status}</Text>
                                         </Flex>
-                                        <Text size="1" color="gray">{c.status}</Text>
-                                    </Flex>
-                                    <Flex gap="2" wrap="wrap">
-                                        {c.state !== 'running' && (
-                                            <Button size="1" variant="soft" color="green" disabled={!!actionLoading}
-                                                onClick={() => doContainerAction(c.id, 'startContainer')}>
-                                                <Play size={14} /> {t('docker.start')}
+                                        <Flex gap="2" wrap="wrap">
+                                            {c.state !== 'running' && (
+                                                <Button size="1" variant="soft" color="green" disabled={!!actionLoading}
+                                                    onClick={() => doContainerAction(c.id, 'startContainer')}>
+                                                    <Play size={14} /> {t('docker.start')}
+                                                </Button>
+                                            )}
+                                            {c.state === 'running' && (
+                                                <Button size="1" variant="soft" color="orange" disabled={!!actionLoading}
+                                                    onClick={() => doContainerAction(c.id, 'stopContainer')}>
+                                                    <Square size={14} /> {t('docker.stop')}
+                                                </Button>
+                                            )}
+                                            <Button size="1" variant="soft" disabled={!!actionLoading}
+                                                onClick={() => doContainerAction(c.id, 'restartContainer')}>
+                                                <RefreshCw size={14} /> {t('docker.restart')}
                                             </Button>
-                                        )}
-                                        {c.state === 'running' && (
-                                            <Button size="1" variant="soft" color="orange" disabled={!!actionLoading}
-                                                onClick={() => doContainerAction(c.id, 'stopContainer')}>
-                                                <Square size={14} /> {t('docker.stop')}
+                                            <Button size="1" variant="soft" onClick={() => viewContainerLogs(c.id, c.name)}>
+                                                <FileText size={14} /> {t('docker.logs')}
                                             </Button>
-                                        )}
-                                        <Button size="1" variant="soft" disabled={!!actionLoading}
-                                            onClick={() => doContainerAction(c.id, 'restartContainer')}>
-                                            <RefreshCw size={14} /> {t('docker.restart')}
-                                        </Button>
-                                        <Button size="1" variant="soft" onClick={() => viewContainerLogs(c.id, c.name)}>
-                                            <FileText size={14} /> {t('docker.logs')}
-                                        </Button>
-                                        <Button size="1" variant="soft" color="red" disabled={!!actionLoading}
-                                            onClick={() => { if (confirm(t('docker.confirm_remove_container'))) doContainerAction(c.id, 'removeContainer') }}>
-                                            <Trash2 size={14} />
-                                        </Button>
+                                            <Button size="1" variant="soft" color="red" disabled={!!actionLoading}
+                                                onClick={() => { if (confirm(t('docker.confirm_remove_container'))) doContainerAction(c.id, 'removeContainer') }}>
+                                                <Trash2 size={14} />
+                                            </Button>
+                                        </Flex>
                                     </Flex>
-                                </Flex>
-                            </Card>
-                        ))}
+                                </Card>
+                            )
+                        })}
                     </Flex>
                 </>
             )}
