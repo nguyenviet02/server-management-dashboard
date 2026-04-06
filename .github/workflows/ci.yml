@@ -50,16 +50,16 @@ jobs:
       - name: Go — Build binary
         run: |
           VERSION=$(cat VERSION | tr -d '[:space:]')
-          CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=${VERSION}" -o webcasa .
+          CGO_ENABLED=1 go build -ldflags="-s -w -X main.Version=${VERSION}" -o serverdash .
           echo "✅ Binary built"
 
       # --- Upload for integration job ---
       - name: Upload binary + frontend
         uses: actions/upload-artifact@v4
         with:
-          name: webcasa-build
+          name: serverdash-build
           path: |
-            webcasa
+            serverdash
             web/dist/
           retention-days: 1
 
@@ -79,10 +79,10 @@ jobs:
       - name: Download build artifacts
         uses: actions/download-artifact@v4
         with:
-          name: webcasa-build
+          name: serverdash-build
 
       - name: Prepare binary
-        run: chmod +x webcasa
+        run: chmod +x serverdash
 
       # --- Install Caddy (tar.gz from GitHub Releases) ---
       - name: Install Caddy
@@ -95,18 +95,18 @@ jobs:
           caddy version
 
       # --- Setup directories & start panel ---
-      - name: Setup and start WebCasa
+      - name: Setup and start ServerDash
         run: |
           mkdir -p data/logs data/backups
-          export WEBCASA_PORT=$PANEL_PORT
+          export SERVERDASH_PORT=$PANEL_PORT
           # JWT secret auto-generated on first run via data/.jwt_secret
-          export WEBCASA_CADDY_BIN=$(which caddy)
-          export WEBCASA_DATA_DIR=./data
-          export WEBCASA_LOG_DIR=./data/logs
+          export SERVERDASH_CADDY_BIN=$(which caddy)
+          export SERVERDASH_DATA_DIR=./data
+          export SERVERDASH_LOG_DIR=./data/logs
           export GIN_MODE=release
-          ./webcasa > /tmp/webcasa.log 2>&1 &
-          echo $! > /tmp/webcasa.pid
-          echo "PID: $(cat /tmp/webcasa.pid)"
+          ./serverdash > /tmp/serverdash.log 2>&1 &
+          echo $! > /tmp/serverdash.pid
+          echo "PID: $(cat /tmp/serverdash.pid)"
 
           # Wait for API to be ready
           echo "Waiting for API..."
@@ -119,9 +119,9 @@ jobs:
           done
 
           # Check if still running
-          if ! kill -0 $(cat /tmp/webcasa.pid) 2>/dev/null; then
-            echo "❌ WebCasa process died!"
-            cat /tmp/webcasa.log
+          if ! kill -0 $(cat /tmp/serverdash.pid) 2>/dev/null; then
+            echo "❌ ServerDash process died!"
+            cat /tmp/serverdash.log
             exit 1
           fi
 
@@ -549,8 +549,8 @@ jobs:
       - name: Show logs on failure
         if: failure()
         run: |
-          echo "=== WebCasa process log ==="
-          cat /tmp/webcasa.log 2>/dev/null || echo "No log file"
+          echo "=== ServerDash process log ==="
+          cat /tmp/serverdash.log 2>/dev/null || echo "No log file"
           echo ""
           echo "=== Caddyfile ==="
           cat data/Caddyfile 2>/dev/null || echo "Not found"
@@ -564,7 +564,7 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          kill $(cat /tmp/webcasa.pid) 2>/dev/null || true
+          kill $(cat /tmp/serverdash.pid) 2>/dev/null || true
           caddy stop 2>/dev/null || true
 
   # ============================================================

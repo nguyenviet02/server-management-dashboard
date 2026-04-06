@@ -8,7 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/web-casa/webcasa/internal/plugin"
+	"github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // Plugin implements the MCP Server plugin.
@@ -28,7 +28,7 @@ func (p *Plugin) Metadata() plugin.Metadata {
 		Name:         "MCP Server",
 		Version:      "1.0.0",
 		Description:  "Model Context Protocol server for AI IDE integration (Cursor, Windsurf, Claude Code)",
-		Author:       "WebCasa",
+		Author:       "ServerDash",
 		Dependencies: []string{},
 		Priority:     90, // load last
 		Icon:         "Cpu",
@@ -59,11 +59,11 @@ func (p *Plugin) Init(ctx *plugin.Context) error {
 
 	// Create MCP server
 	mcpSrv := mcp.NewServer(&mcp.Implementation{
-		Name:    "webcasa",
-		Title:   "WebCasa MCP Server",
+		Name:    "serverdash",
+		Title:   "ServerDash MCP Server",
 		Version: "1.0.0",
 	}, &mcp.ServerOptions{
-		Instructions: "WebCasa is an AI-First lightweight server management panel. Use these tools to manage reverse proxies, deploy projects, control Docker stacks, manage databases, and generate Docker Compose configurations.",
+		Instructions: "ServerDash is an AI-First lightweight server management panel. Use these tools to manage reverse proxies, deploy projects, control Docker stacks, manage databases, and generate Docker Compose configurations.",
 		Logger:       slog.New(logger.Handler()),
 	})
 
@@ -165,7 +165,6 @@ func (p *Plugin) FrontendManifest() plugin.FrontendManifest {
 				Menu:    true,
 				Icon:    "Cpu",
 				Label:   "MCP Server",
-				LabelZh: "MCP 服务",
 			},
 		},
 		MenuGroup: "tool",

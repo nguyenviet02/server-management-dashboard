@@ -14,7 +14,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/web-casa/webcasa/internal/versions"
+	"github.com/nguyenviet02/server-management-dashboard/internal/versions"
 )
 
 // KopiaClient wraps the Kopia CLI for repository and snapshot operations.
@@ -377,7 +377,7 @@ func (k *KopiaClient) targetArgs(cfg *BackupConfig) []string {
 	default: // "local"
 		path := cfg.LocalPath
 		if path == "" {
-			path = "/var/backups/webcasa"
+			path = "/var/backups/serverdash"
 		}
 		os.MkdirAll(path, 0755)
 		return []string{

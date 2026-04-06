@@ -9,8 +9,8 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/web-casa/webcasa/internal/model"
-	"github.com/web-casa/webcasa/internal/service"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
@@ -19,7 +19,7 @@ import (
 
 var errTestCounter atomic.Int64
 
-// Feature: phase6-enhancements, Property 21: 后端错误响应包含翻译键
+// Feature: phase6-enhancements, Property 21: backend error responses include translation keys
 // For any Phase 6 API error response, the response body should contain an `error_key` field
 // whose value is a string usable for frontend i18n translation.
 // **Validates: Requirements 7.5**

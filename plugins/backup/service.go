@@ -87,7 +87,7 @@ func (s *Service) GetConfig() (*BackupConfig, error) {
 		cfg = BackupConfig{
 			ID:         1,
 			TargetType: "local",
-			LocalPath:  "/var/backups/webcasa",
+			LocalPath:  "/var/backups/serverdash",
 			CronExpr:   "0 2 * * *",
 			RetainCount: 10,
 			RetainDays:  30,
@@ -465,12 +465,15 @@ func (s *Service) backupPanel(parentCtx context.Context, destDir string, snapID 
 	os.MkdirAll(panelDir, 0755)
 
 	// Copy SQLite DB using VACUUM INTO for consistency.
-	dbPath := os.Getenv("WEBCASA_DB_PATH")
+	dbPath := os.Getenv("SERVERDASH_DB_PATH")
 	if dbPath == "" {
-		dbPath = "/opt/webcasa/data/webcasa.db"
+		dbPath = os.Getenv("WEBCASA_DB_PATH")
+	}
+	if dbPath == "" {
+		dbPath = "/opt/serverdash/data/serverdash.db"
 	}
 	if _, err := os.Stat(dbPath); err == nil {
-		vacuumDest := filepath.Join(panelDir, "webcasa.db")
+		vacuumDest := filepath.Join(panelDir, "serverdash.db")
 		ctx, cancel := context.WithTimeout(parentCtx, 30*time.Second)
 		defer cancel()
 		escapedDest := strings.ReplaceAll(vacuumDest, "'", "''")
@@ -483,7 +486,10 @@ func (s *Service) backupPanel(parentCtx context.Context, destDir string, snapID 
 	}
 
 	// Copy Caddyfile.
-	caddyfilePath := os.Getenv("WEBCASA_CADDYFILE_PATH")
+	caddyfilePath := os.Getenv("SERVERDASH_CADDYFILE_PATH")
+	if caddyfilePath == "" {
+		caddyfilePath = os.Getenv("WEBCASA_CADDYFILE_PATH")
+	}
 	if caddyfilePath == "" {
 		caddyfilePath = "/etc/caddy/Caddyfile"
 	}
@@ -538,10 +544,10 @@ func (s *Service) backupDatabases(parentCtx context.Context, destDir string, sna
 	dbDir := filepath.Join(destDir, "databases")
 	os.MkdirAll(dbDir, 0755)
 
-	// Get running database containers (matching webcasa-db-* naming).
+	// Get running database containers (matching serverdash-db-* naming).
 	ctx, cancel := context.WithTimeout(parentCtx, 30*time.Second)
 	defer cancel()
-	cmd := exec.CommandContext(ctx, "docker", "ps", "--filter", "name=webcasa-db-",
+	cmd := exec.CommandContext(ctx, "docker", "ps", "--filter", "name=serverdash-db-",
 		"--format", "{{.Names}}")
 	output, err := cmd.Output()
 	if err != nil {
@@ -564,7 +570,7 @@ func (s *Service) backupDatabases(parentCtx context.Context, destDir string, sna
 		if containsAny(name, "mysql", "mariadb") {
 			// Pass password via environment variable to avoid /proc exposure.
 			dumpCmd = exec.CommandContext(dumpCtx, "docker", "exec",
-				"-e", "MYSQL_PWD="+os.Getenv("WEBCASA_DB_ROOT_PASS"),
+				"-e", "MYSQL_PWD="+firstNonEmpty(os.Getenv("SERVERDASH_DB_ROOT_PASS"), os.Getenv("WEBCASA_DB_ROOT_PASS")),
 				name, "mysqldump", "--all-databases", "-u", "root")
 		} else if containsAny(name, "postgres") {
 			dumpCmd = exec.CommandContext(dumpCtx, "docker", "exec", name,
@@ -660,4 +666,13 @@ func containsAny(s string, substrs ...string) bool {
 		}
 	}
 	return false
+}
+
+func firstNonEmpty(values ...string) string {
+	for _, value := range values {
+		if value != "" {
+			return value
+		}
+	}
+	return ""
 }

@@ -1,6 +1,6 @@
 package ai
 
-import "github.com/web-casa/webcasa/internal/crypto"
+import "github.com/nguyenviet02/server-management-dashboard/internal/crypto"
 
 // Encrypt encrypts plaintext using AES-256-GCM via the shared crypto package.
 var Encrypt = crypto.Encrypt

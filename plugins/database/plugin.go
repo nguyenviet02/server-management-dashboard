@@ -3,7 +3,7 @@ package database
 import (
 	"fmt"
 
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // Plugin implements the plugin.Plugin interface for database management.
@@ -25,7 +25,7 @@ func (p *Plugin) Metadata() pluginpkg.Metadata {
 		Name:         "Database",
 		Version:      "1.0.0",
 		Description:  "Create and manage MySQL, PostgreSQL, MariaDB, Redis instances via Docker",
-		Author:       "Web.Casa",
+		Author:       "ServerDash",
 		Dependencies: []string{"docker"},
 		Priority:     15,
 		Icon:         "Database",
@@ -104,10 +104,10 @@ func (p *Plugin) FrontendManifest() pluginpkg.FrontendManifest {
 	return pluginpkg.FrontendManifest{
 		ID: "database",
 		Routes: []pluginpkg.FrontendRoute{
-			{Path: "/database", Component: "DatabaseInstances", Menu: true, Icon: "Database", Label: "Database", LabelZh: "数据库"},
-			{Path: "/database/sqlite", Component: "SQLiteBrowser", Label: "SQLite Browser", LabelZh: "SQLite 浏览器"},
-			{Path: "/database/query", Component: "DatabaseQuery", Label: "Query Console", LabelZh: "查询控制台"},
-			{Path: "/database/:id", Component: "DatabaseDetail", Label: "Instance Detail", LabelZh: "实例详情"},
+			{Path: "/database", Component: "DatabaseInstances", Menu: true, Icon: "Database", Label: "Database"},
+			{Path: "/database/sqlite", Component: "SQLiteBrowser", Label: "SQLite Browser"},
+			{Path: "/database/query", Component: "DatabaseQuery", Label: "Query Console"},
+			{Path: "/database/:id", Component: "DatabaseDetail", Label: "Instance Detail"},
 		},
 		MenuGroup: "database",
 		MenuOrder: 15,

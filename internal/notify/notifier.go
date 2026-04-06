@@ -106,7 +106,7 @@ func (n *Notifier) sendWebhook(ch Channel, event NotifyEvent) error {
 		return err
 	}
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("User-Agent", "WebCasa-Notifier/1.0")
+	req.Header.Set("User-Agent", "ServerDash-Notifier/1.0")
 	for k, v := range cfg.Headers {
 		req.Header.Set(k, v)
 	}
@@ -138,7 +138,7 @@ func (n *Notifier) sendEmail(ch Channel, event NotifyEvent) error {
 		from = cfg.Username
 	}
 
-	subject := fmt.Sprintf("[Web.Casa] %s", event.Title)
+	subject := fmt.Sprintf("[ServerDash] %s", event.Title)
 	body := fmt.Sprintf("Event: %s\nTime: %s\n\n%s",
 		event.Type,
 		event.Time.Format("2006-01-02 15:04:05"),
@@ -240,7 +240,7 @@ func (n *Notifier) sendDiscord(ch Channel, event NotifyEvent) error {
 				"description": description,
 				"color":       color,
 				"footer": map[string]interface{}{
-					"text": "Web.Casa • " + event.Type,
+					"text": "ServerDash • " + event.Type,
 				},
 				"timestamp": event.Time.Format(time.RFC3339),
 			},
@@ -342,7 +342,7 @@ func (n *Notifier) TestChannel(ch Channel) error {
 	event := NotifyEvent{
 		Type:    "test",
 		Title:   "Test Notification",
-		Message: "This is a test notification from Web.Casa. If you received this, your notification channel is configured correctly.",
+		Message: "This is a test notification from ServerDash. If you received this, your notification channel is configured correctly.",
 		Time:    time.Now(),
 	}
 

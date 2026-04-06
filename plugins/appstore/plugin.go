@@ -3,7 +3,7 @@ package appstore
 import (
 	"fmt"
 
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // Plugin implements the App Store plugin.
@@ -26,7 +26,7 @@ func (p *Plugin) Metadata() pluginpkg.Metadata {
 		Name:         "App Store",
 		Version:      "1.0.0",
 		Description:  "One-click Docker app installation and project template marketplace",
-		Author:       "Web.Casa",
+		Author:       "ServerDash",
 		Dependencies: []string{"docker"},
 		Priority:     60,
 		Icon:         "Store",
@@ -115,9 +115,9 @@ func (p *Plugin) FrontendManifest() pluginpkg.FrontendManifest {
 	return pluginpkg.FrontendManifest{
 		ID: "appstore",
 		Routes: []pluginpkg.FrontendRoute{
-			{Path: "/store", Component: "AppStore", Menu: true, Icon: "Store", Label: "App Store", LabelZh: "应用商店"},
-			{Path: "/store/app/:id", Component: "AppDetail", Label: "App Detail", LabelZh: "应用详情"},
-			{Path: "/store/templates", Component: "TemplateMarket", Menu: true, Icon: "LayoutTemplate", Label: "Templates", LabelZh: "项目模板"},
+			{Path: "/store", Component: "AppStore", Menu: true, Icon: "Store", Label: "App Store"},
+			{Path: "/store/app/:id", Component: "AppDetail", Label: "App Detail"},
+			{Path: "/store/templates", Component: "TemplateMarket", Menu: true, Icon: "LayoutTemplate", Label: "Templates"},
 		},
 		MenuGroup: "deploy",
 		MenuOrder: 5,

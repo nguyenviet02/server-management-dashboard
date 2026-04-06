@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # ============================================================================
-#  Web.Casa Install Script Verification
+#  ServerDash Install Script Verification
 #  Tests install.sh --from-source in fresh Docker containers
 #
 #  Usage:
@@ -60,7 +60,7 @@ declare -A DISTRO_IMAGES=(
 build_test_image() {
     local DISTRO="$1"
     local BASE_IMAGE="${DISTRO_IMAGES[$DISTRO]}"
-    local TAG="webcasa-install-test-${DISTRO}"
+    local TAG="serverdash-install-test-${DISTRO}"
 
     echo -e "\n${CYAN}${BOLD}Building test image for ${DISTRO} (${BASE_IMAGE})...${NC}"
 
@@ -95,8 +95,8 @@ DOCKERFILE
 # ==================== Run Install Test ====================
 run_install_test() {
     local DISTRO="$1"
-    local TAG="webcasa-install-test-${DISTRO}"
-    local CONTAINER="webcasa-install-test-${DISTRO}-$$"
+    local TAG="serverdash-install-test-${DISTRO}"
+    local CONTAINER="serverdash-install-test-${DISTRO}-$$"
     local API="http://localhost:39921"
 
     echo -e "\n${CYAN}${BOLD}============================================${NC}"
@@ -158,66 +158,66 @@ FAKESC
     echo -e "${YELLOW}[2/5] Verifying installation artifacts...${NC}"
 
     # Binary exists
-    docker exec "$CONTAINER" test -f /usr/local/bin/webcasa-server && \
-        pass "Binary at /usr/local/bin/webcasa-server" || fail "Binary missing"
+    docker exec "$CONTAINER" test -f /usr/local/bin/serverdash-server && \
+        pass "Binary at /usr/local/bin/serverdash-server" || fail "Binary missing"
 
     # Binary is executable and responds to --version
     local VERSION_OUT
-    VERSION_OUT=$(docker exec "$CONTAINER" /usr/local/bin/webcasa-server --version 2>&1) && \
+    VERSION_OUT=$(docker exec "$CONTAINER" /usr/local/bin/serverdash-server --version 2>&1) && \
         pass "Binary --version: $VERSION_OUT" || fail "Binary --version failed"
 
     # Config file exists
-    docker exec "$CONTAINER" test -f /etc/webcasa/webcasa.env && \
-        pass "Config at /etc/webcasa/webcasa.env" || fail "Config missing"
+    docker exec "$CONTAINER" test -f /etc/serverdash/serverdash.env && \
+        pass "Config at /etc/serverdash/serverdash.env" || fail "Config missing"
 
     # Config contains required variables
-    docker exec "$CONTAINER" grep -q "WEBCASA_JWT_SECRET" /etc/webcasa/webcasa.env && \
+    docker exec "$CONTAINER" grep -q "SERVERDASH_JWT_SECRET" /etc/serverdash/serverdash.env && \
         pass "Config has JWT_SECRET" || fail "Config missing JWT_SECRET"
 
-    docker exec "$CONTAINER" grep -q "GIN_MODE=release" /etc/webcasa/webcasa.env && \
+    docker exec "$CONTAINER" grep -q "GIN_MODE=release" /etc/serverdash/serverdash.env && \
         pass "Config has GIN_MODE=release" || fail "Config missing GIN_MODE"
 
     # Data directories
-    docker exec "$CONTAINER" test -d /var/lib/webcasa && \
-        pass "Data dir /var/lib/webcasa" || fail "Data dir missing"
+    docker exec "$CONTAINER" test -d /var/lib/serverdash && \
+        pass "Data dir /var/lib/serverdash" || fail "Data dir missing"
 
-    docker exec "$CONTAINER" test -d /var/lib/webcasa/plugins/filemanager && \
+    docker exec "$CONTAINER" test -d /var/lib/serverdash/plugins/filemanager && \
         pass "Plugin dir plugins/filemanager" || fail "Plugin dir filemanager missing"
 
-    docker exec "$CONTAINER" test -d /var/lib/webcasa/plugins/docker && \
+    docker exec "$CONTAINER" test -d /var/lib/serverdash/plugins/docker && \
         pass "Plugin dir plugins/docker" || fail "Plugin dir docker missing"
 
-    docker exec "$CONTAINER" test -d /var/lib/webcasa/plugins/deploy && \
+    docker exec "$CONTAINER" test -d /var/lib/serverdash/plugins/deploy && \
         pass "Plugin dir plugins/deploy" || fail "Plugin dir deploy missing"
 
-    docker exec "$CONTAINER" test -d /var/lib/webcasa/plugins/ai && \
+    docker exec "$CONTAINER" test -d /var/lib/serverdash/plugins/ai && \
         pass "Plugin dir plugins/ai" || fail "Plugin dir ai missing"
 
     # Frontend files
-    docker exec "$CONTAINER" test -f /var/lib/webcasa/web/dist/index.html && \
+    docker exec "$CONTAINER" test -f /var/lib/serverdash/web/dist/index.html && \
         pass "Frontend dist/index.html" || fail "Frontend files missing"
 
     # Log directory
-    docker exec "$CONTAINER" test -d /var/log/webcasa && \
-        pass "Log dir /var/log/webcasa" || fail "Log dir missing"
+    docker exec "$CONTAINER" test -d /var/log/serverdash && \
+        pass "Log dir /var/log/serverdash" || fail "Log dir missing"
 
     # Systemd service file
-    docker exec "$CONTAINER" test -f /etc/systemd/system/webcasa.service && \
+    docker exec "$CONTAINER" test -f /etc/systemd/system/serverdash.service && \
         pass "Systemd service file" || fail "Systemd service file missing"
 
     # Verify systemd service runs as root (Pro requirement)
-    docker exec "$CONTAINER" grep -q "User=root" /etc/systemd/system/webcasa.service && \
+    docker exec "$CONTAINER" grep -q "User=root" /etc/systemd/system/serverdash.service && \
         pass "Service runs as root" || fail "Service not running as root"
 
     # Verify no ProtectHome (Pro requirement: file manager needs /home access)
-    if docker exec "$CONTAINER" grep -q "ProtectHome" /etc/systemd/system/webcasa.service 2>/dev/null; then
+    if docker exec "$CONTAINER" grep -q "ProtectHome" /etc/systemd/system/serverdash.service 2>/dev/null; then
         fail "Service still has ProtectHome (blocks file manager)"
     else
         pass "No ProtectHome restriction"
     fi
 
     # Verify no ProtectSystem=strict
-    if docker exec "$CONTAINER" grep -q "ProtectSystem=strict" /etc/systemd/system/webcasa.service 2>/dev/null; then
+    if docker exec "$CONTAINER" grep -q "ProtectSystem=strict" /etc/systemd/system/serverdash.service 2>/dev/null; then
         fail "Service still has ProtectSystem=strict"
     else
         pass "No ProtectSystem=strict restriction"
@@ -232,19 +232,19 @@ FAKESC
         pass "bash installed" || fail "bash not installed"
 
     # Caddyfile exists
-    docker exec "$CONTAINER" test -f /var/lib/webcasa/Caddyfile && \
+    docker exec "$CONTAINER" test -f /var/lib/serverdash/Caddyfile && \
         pass "Default Caddyfile" || fail "Caddyfile missing"
 
     # ---- Start binary and test API ----
-    echo -e "${YELLOW}[3/5] Starting WebCasa binary...${NC}"
+    echo -e "${YELLOW}[3/5] Starting ServerDash binary...${NC}"
 
     docker exec -d "$CONTAINER" bash -c '
-        source /etc/webcasa/webcasa.env
-        export WEBCASA_PORT WEBCASA_DATA_DIR WEBCASA_DB_PATH WEBCASA_JWT_SECRET
-        export WEBCASA_LOG_DIR GIN_MODE
-        export WEBCASA_CADDY_BIN=/bin/false
-        cd /var/lib/webcasa
-        /usr/local/bin/webcasa-server > /tmp/webcasa.log 2>&1
+        source /etc/serverdash/serverdash.env
+        export SERVERDASH_PORT SERVERDASH_DATA_DIR SERVERDASH_DB_PATH SERVERDASH_JWT_SECRET
+        export SERVERDASH_LOG_DIR GIN_MODE
+        export SERVERDASH_CADDY_BIN=/bin/false
+        cd /var/lib/serverdash
+        /usr/local/bin/serverdash-server > /tmp/serverdash.log 2>&1
     '
 
     # Wait for API
@@ -260,7 +260,7 @@ FAKESC
 
     if ! $READY; then
         fail "API not ready after 30s"
-        docker exec "$CONTAINER" cat /tmp/webcasa.log 2>/dev/null | tail -20
+        docker exec "$CONTAINER" cat /tmp/serverdash.log 2>/dev/null | tail -20
         cleanup_container "$CONTAINER" "$TAG"
         return
     fi
@@ -397,7 +397,7 @@ cleanup_container() {
 # ==================== Main ====================
 main() {
     echo -e "${CYAN}${BOLD}============================================${NC}"
-    echo -e "${CYAN}${BOLD}  Web.Casa Install Script Verification${NC}"
+    echo -e "${CYAN}${BOLD}  ServerDash Install Script Verification${NC}"
     echo -e "${CYAN}${BOLD}============================================${NC}"
 
     cd "$PROJECT_DIR"

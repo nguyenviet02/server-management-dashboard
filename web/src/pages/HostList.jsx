@@ -721,7 +721,7 @@ function HostFormDialog({ open, onClose, onSaved, host }) {
                                         <TextField.Root
                                             value={form.error_page_path}
                                             onChange={(e) => setForm({ ...form, error_page_path: e.target.value })}
-                                            placeholder="/var/lib/webcasa/error_pages"
+                                            placeholder="/var/lib/serverdash/error_pages"
                                         />
                                     </Box>
 

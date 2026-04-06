@@ -7,7 +7,7 @@ import (
 	"log/slog"
 	"sync"
 
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // Tool defines a single tool that the AI can invoke.

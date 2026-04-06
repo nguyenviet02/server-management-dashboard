@@ -1,24 +1,23 @@
 #!/usr/bin/env bash
-# WebCasa App Store — Upstream Sync Script
+# ServerDash App Store — Upstream Sync Script
 #
-# 功能:
-#   1. 从 Runtipi 上游同步新增/更新的应用
-#   2. 检测与 WebCasa 的兼容性
-#   3. 生成中文翻译 (调用 AI API)
-#   4. 创建 PR
+# Features:
+#   1. Sync newly added or updated apps from the Runtipi upstream
+#   2. Check compatibility with ServerDash
+#   3. Create a PR
 #
-# 用法:
-#   ./sync-upstream.sh [--dry-run] [--no-translate] [--app <app-id>]
+# Usage:
+#   ./sync-upstream.sh [--dry-run] [--app <app-id>]
 #
-# 环境变量:
-#   UPSTREAM_REPO   上游仓库 (默认: https://github.com/runtipi/runtipi-appstore)
-#   AI_API_URL      AI API 地址 (OpenAI-compatible)
-#   AI_API_KEY      AI API Key
-#   AI_MODEL        模型名称 (默认: gpt-4o)
+# Environment variables:
+#   UPSTREAM_REPO   Upstream repository (default: https://github.com/runtipi/runtipi-appstore)
+#   AI_API_URL      AI API endpoint (OpenAI-compatible)
+#   AI_API_KEY      AI API key
+#   AI_MODEL        Model name (default: gpt-4o)
 
 set -euo pipefail
 
-# ── 配置 ──
+# ── Configuration ──
 UPSTREAM_REPO="${UPSTREAM_REPO:-https://github.com/runtipi/runtipi-appstore}"
 UPSTREAM_BRANCH="master"
 AI_API_URL="${AI_API_URL:-https://api.openai.com/v1}"
@@ -30,25 +29,23 @@ COMPAT_DB="$REPO_ROOT/compatibility.json"
 SYNC_LOG="$REPO_ROOT/SYNC_LOG.md"
 
 DRY_RUN=false
-NO_TRANSLATE=false
 SINGLE_APP=""
 
-# ── 参数解析 ──
+# ── Argument parsing ──
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --dry-run) DRY_RUN=true; shift ;;
-        --no-translate) NO_TRANSLATE=true; shift ;;
         --app) SINGLE_APP="$2"; shift 2 ;;
         *) echo "Unknown option: $1"; exit 1 ;;
     esac
 done
 
-# ── 工具函数 ──
+# ── Utility helpers ──
 log() { echo "[$(date '+%H:%M:%S')] $*"; }
 warn() { echo "[$(date '+%H:%M:%S')] ⚠ $*" >&2; }
 err() { echo "[$(date '+%H:%M:%S')] ✗ $*" >&2; }
 
-# ── Step 1: 添加并拉取上游 ──
+# ── Step 1: Add and fetch upstream ──
 log "Step 1: Fetching upstream..."
 
 if ! git remote | grep -q '^upstream$'; then
@@ -57,10 +54,10 @@ fi
 
 git fetch upstream "$UPSTREAM_BRANCH" --depth=1
 
-# ── Step 2: 找出变更的应用 ──
+# ── Step 2: Detect changed apps ──
 log "Step 2: Detecting changed apps..."
 
-# 获取上游 apps/ 目录的应用列表
+# Get the app list from the upstream apps/ directory
 UPSTREAM_APPS=$(git ls-tree --name-only "upstream/$UPSTREAM_BRANCH" -- apps/ 2>/dev/null | sed 's|^apps/||')
 
 CHANGED_APPS=()
@@ -71,7 +68,7 @@ for app_id in $UPSTREAM_APPS; do
     [[ -z "$app_id" ]] && continue
     [[ "$app_id" == "." ]] && continue
 
-    # 如果指定了单个应用，只处理它
+    # If a single app is specified, only process that app
     if [[ -n "$SINGLE_APP" && "$app_id" != "$SINGLE_APP" ]]; then
         continue
     fi
@@ -80,7 +77,7 @@ for app_id in $UPSTREAM_APPS; do
         NEW_APPS+=("$app_id")
         CHANGED_APPS+=("$app_id")
     else
-        # 比较 config.json 和 docker-compose.yml 的差异
+        # Compare config.json and docker-compose.yml differences
         upstream_config=$(git show "upstream/$UPSTREAM_BRANCH:apps/$app_id/config.json" 2>/dev/null || echo "")
         local_config=$(cat "$APPS_DIR/$app_id/config.json" 2>/dev/null || echo "")
 
@@ -98,7 +95,7 @@ if [[ ${#CHANGED_APPS[@]} -eq 0 ]]; then
     exit 0
 fi
 
-# ── Step 3: 同步文件 ──
+# ── Step 3: Sync files ──
 log "Step 3: Syncing app files..."
 
 for app_id in "${CHANGED_APPS[@]}"; do
@@ -109,15 +106,15 @@ for app_id in "${CHANGED_APPS[@]}"; do
         continue
     fi
 
-    # 创建目录
+    # Create app directory
     mkdir -p "$APPS_DIR/$app_id/metadata"
 
-    # 从上游检出文件 (保留本地的 i18n 和 zh 文件)
+    # Check out files from upstream
     git show "upstream/$UPSTREAM_BRANCH:apps/$app_id/config.json" > "$APPS_DIR/$app_id/config.json" 2>/dev/null || true
     git show "upstream/$UPSTREAM_BRANCH:apps/$app_id/docker-compose.yml" > "$APPS_DIR/$app_id/docker-compose.yml" 2>/dev/null || true
     git show "upstream/$UPSTREAM_BRANCH:apps/$app_id/metadata/description.md" > "$APPS_DIR/$app_id/metadata/description.md" 2>/dev/null || true
 
-    # 同步 logo (尝试多种格式)
+    # Sync logo, trying multiple formats
     for ext in jpg png svg webp; do
         if git show "upstream/$UPSTREAM_BRANCH:apps/$app_id/metadata/logo.$ext" > "$APPS_DIR/$app_id/metadata/logo.$ext" 2>/dev/null; then
             break
@@ -127,7 +124,7 @@ for app_id in "${CHANGED_APPS[@]}"; do
     done
 done
 
-# ── Step 4: 兼容性检测 ──
+# ── Step 4: Compatibility checks ──
 log "Step 4: Running compatibility checks..."
 
 check_compatibility() {
@@ -137,9 +134,9 @@ check_compatibility() {
     local issues=()
     local compat="full"
 
-    # 检查 compose 文件
+    # Check compose file
     if [[ -f "$compose" ]]; then
-        # 安全警告
+        # Security warnings
         if grep -q 'privileged: true' "$compose"; then
             issues+=('{"type":"security_warning","description":"Uses privileged mode","severity":"warning"}')
             [[ "$compat" == "full" ]] && compat="partial"
@@ -157,16 +154,16 @@ check_compatibility() {
             [[ "$compat" == "full" ]] && compat="partial"
         fi
 
-        # 检查是否有未知变量
+        # Check for unknown variables
         unknown_vars=$(grep -oP '\$\{(\w+)\}' "$compose" 2>/dev/null | sort -u | while read -r var; do
             var_name="${var#\$\{}"
             var_name="${var_name%\}}"
-            # 检查是否是已知变量
+            # Check whether it is a known variable
             case "$var_name" in
                 APP_ID|APP_PORT|APP_DATA_DIR|APP_DOMAIN|APP_HOST|LOCAL_DOMAIN|APP_EXPOSED|APP_PROTOCOL|ROOT_FOLDER_HOST|TZ|NETWORK_INTERFACE|DNS_IP|INTERNAL_IP|COMPOSE_PROJECT_NAME)
                     ;;
                 *)
-                    # 检查是否在 form_fields 中定义
+                    # Check whether it is defined in form_fields
                     if ! jq -r '.form_fields[]?.env_variable' "$config" 2>/dev/null | grep -q "^${var_name}$"; then
                         echo "$var_name"
                     fi
@@ -181,13 +178,13 @@ check_compatibility() {
             [[ "$compat" == "full" ]] && compat="partial"
         fi
 
-        # 检查非 HTTP 端口直接暴露
+        # Check for direct non-HTTP port exposure
         if grep -E '^\s+- "[0-9]+:[0-9]+/(tcp|udp)"' "$compose" >/dev/null 2>&1; then
             issues+=('{"type":"firewall_needed","description":"Exposes non-HTTP ports directly","severity":"info"}')
         fi
     fi
 
-    # 输出结果
+    # Output result
     local issues_json="["
     local first=true
     for issue in "${issues[@]}"; do
@@ -199,7 +196,7 @@ check_compatibility() {
     echo "{\"app_id\":\"$app_id\",\"compatibility\":\"$compat\",\"issues\":$issues_json}"
 }
 
-# 初始化或加载兼容性数据库
+# Initialize or load compatibility database
 if [[ ! -f "$COMPAT_DB" ]]; then
     echo '{}' > "$COMPAT_DB"
 fi
@@ -221,7 +218,7 @@ for app_id in "${CHANGED_APPS[@]}"; do
     fi
 done
 
-# 更新兼容性数据库
+# Update compatibility database
 if ! $DRY_RUN; then
     for result in "${COMPAT_RESULTS[@]}"; do
         app_id=$(echo "$result" | jq -r '.app_id')
@@ -231,114 +228,10 @@ if ! $DRY_RUN; then
     done
 fi
 
-# ── Step 5: AI 翻译 ──
-if ! $NO_TRANSLATE && [[ -n "${AI_API_KEY:-}" ]]; then
-    log "Step 5: AI translation..."
+# ── Step 5: Translation removed ──
+log "Step 5: Skipped (zh translation support removed)"
 
-    translate_app() {
-        local app_id="$1"
-        local config="$APPS_DIR/$app_id/config.json"
-        local desc_file="$APPS_DIR/$app_id/metadata/description.md"
-        local i18n_dir="$APPS_DIR/$app_id/metadata/i18n"
-        local zh_json="$i18n_dir/zh.json"
-        local zh_desc="$APPS_DIR/$app_id/metadata/description.zh.md"
-
-        # 跳过已有翻译的 (除非是更新)
-        if [[ -f "$zh_json" ]] && ! printf '%s\n' "${UPDATED_APPS[@]}" | grep -q "^${app_id}$"; then
-            log "  Skip translation for $app_id (already exists)"
-            return
-        fi
-
-        # 读取源数据
-        local name=$(jq -r '.name // ""' "$config")
-        local short_desc=$(jq -r '.short_desc // ""' "$config")
-        local form_fields=$(jq -c '.form_fields // []' "$config")
-        local desc_content=""
-        [[ -f "$desc_file" ]] && desc_content=$(cat "$desc_file")
-
-        # 构建 AI 请求
-        local prompt="请将以下应用信息翻译为简体中文。
-
-应用名称: $name
-简短描述: $short_desc
-表单字段: $form_fields
-
-翻译规则:
-- 应用名保留英文，后面可加中文说明 (如 \"Nextcloud 私有云\")
-- 简短描述控制在 80 字以内
-- form_fields 只翻译 label 和 hint
-- 技术术语保持一致
-
-请直接返回 JSON 格式:
-{
-  \"name\": \"中文名\",
-  \"short_desc\": \"中文简述\",
-  \"form_fields\": {
-    \"ENV_VAR_NAME\": {\"label\": \"中文标签\", \"hint\": \"中文提示\"}
-  }
-}"
-
-        # 调用 AI API
-        local response=$(curl -sf "$AI_API_URL/chat/completions" \
-            -H "Authorization: Bearer $AI_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "$(jq -n --arg model "$AI_MODEL" --arg prompt "$prompt" '{
-                model: $model,
-                messages: [{"role": "user", "content": $prompt}],
-                temperature: 0.3,
-                response_format: {"type": "json_object"}
-            }')" 2>/dev/null)
-
-        if [[ -z "$response" ]]; then
-            warn "  AI translation failed for $app_id"
-            return
-        fi
-
-        # 提取翻译结果
-        local translated=$(echo "$response" | jq -r '.choices[0].message.content')
-
-        if [[ -n "$translated" && "$translated" != "null" ]]; then
-            mkdir -p "$i18n_dir"
-            echo "$translated" | jq '.' > "$zh_json" 2>/dev/null || echo "$translated" > "$zh_json"
-            log "  Translated: $app_id"
-        fi
-
-        # 翻译长描述 (如果存在且超过 50 字符)
-        if [[ -n "$desc_content" && ${#desc_content} -gt 50 ]]; then
-            local desc_prompt="将以下 Markdown 应用描述翻译为简体中文。保留 Markdown 格式，保留英文专有名词、URL 和代码块。\n\n$desc_content"
-
-            local desc_response=$(curl -sf "$AI_API_URL/chat/completions" \
-                -H "Authorization: Bearer $AI_API_KEY" \
-                -H "Content-Type: application/json" \
-                -d "$(jq -n --arg model "$AI_MODEL" --arg prompt "$desc_prompt" '{
-                    model: $model,
-                    messages: [{"role": "user", "content": $prompt}],
-                    temperature: 0.3
-                }')" 2>/dev/null)
-
-            if [[ -n "$desc_response" ]]; then
-                local zh_content=$(echo "$desc_response" | jq -r '.choices[0].message.content')
-                if [[ -n "$zh_content" && "$zh_content" != "null" ]]; then
-                    echo "$zh_content" > "$zh_desc"
-                    log "  Translated description: $app_id"
-                fi
-            fi
-        fi
-    }
-
-    for app_id in "${CHANGED_APPS[@]}"; do
-        translate_app "$app_id"
-        sleep 1  # Rate limiting
-    done
-else
-    if [[ -z "${AI_API_KEY:-}" ]]; then
-        log "Step 5: Skipped (no AI_API_KEY set)"
-    else
-        log "Step 5: Skipped (--no-translate)"
-    fi
-fi
-
-# ── Step 6: 生成同步日志 ──
+# ── Step 6: Update sync log ──
 log "Step 6: Updating sync log..."
 
 if ! $DRY_RUN; then
@@ -365,7 +258,7 @@ if ! $DRY_RUN; then
     } >> "$SYNC_LOG"
 fi
 
-# ── 完成 ──
+# ── Done ──
 log "Done! ${#NEW_APPS[@]} new, ${#UPDATED_APPS[@]} updated apps synced."
 
 if $DRY_RUN; then

@@ -244,7 +244,7 @@ export default function Login() {
                 <Flex direction="column" align="center" gap="2" mb="6">
                     <img
                         src={logoImg}
-                        alt="WebCasa"
+                        alt="ServerDash"
                         style={{
                             width: 56,
                             height: 56,
@@ -253,7 +253,7 @@ export default function Login() {
                         }}
                     />
                     <Heading size="6" weight="bold" style={{ color: 'var(--cp-text)' }}>
-                        WebCasa
+                        ServerDash
                     </Heading>
                     <Text size="2" color="gray">
                         {t('login.subtitle')}

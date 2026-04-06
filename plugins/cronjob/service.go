@@ -14,7 +14,7 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 	"gorm.io/gorm"
 )
 
@@ -323,7 +323,7 @@ func buildCrontab(entries []CrontabEntry) (string, error) {
 }
 
 func installCrontab(raw string) error {
-	tmpFile, err := os.CreateTemp("", "webcasa-crontab-*.txt")
+	tmpFile, err := os.CreateTemp("", "serverdash-crontab-*.txt")
 	if err != nil {
 		return fmt.Errorf("create temp crontab: %w", err)
 	}

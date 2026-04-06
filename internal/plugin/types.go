@@ -26,7 +26,7 @@ type Plugin interface {
 // Metadata describes a plugin.
 type Metadata struct {
 	ID           string   `json:"id"`           // unique identifier, e.g. "docker"
-	Name         string   `json:"name"`         // display name, e.g. "Docker 管理"
+	Name         string   `json:"name"`         // display name, e.g. "Docker"
 	Version      string   `json:"version"`      // semver, e.g. "1.0.0"
 	Description  string   `json:"description"`  // short description
 	Author       string   `json:"author"`       // author name
@@ -225,7 +225,6 @@ type FrontendRoute struct {
 	Menu      bool   `json:"menu"`      // whether to show in sidebar
 	Icon      string `json:"icon"`      // Lucide icon name (for menu)
 	Label     string `json:"label"`     // menu label
-	LabelZh   string `json:"label_zh"`  // Chinese label (i18n)
 }
 
 // FrontendProvider is an optional interface plugins can implement to declare

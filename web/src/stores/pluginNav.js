@@ -34,7 +34,6 @@ export const usePluginNavStore = create((set) => ({
                         to: r.path,
                         icon: r.icon || 'Box',
                         label: r.label,
-                        labelZh: r.label_zh,
                         pluginId: m.id,
                         menuGroup: m.menu_group,
                         menuOrder: m.menu_order,

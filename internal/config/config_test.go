@@ -14,7 +14,7 @@ func TestResolveJWTSecret_GeneratesNew(t *testing.T) {
 	dir := t.TempDir()
 
 	// Ensure no env var interferes
-	t.Setenv("WEBCASA_JWT_SECRET", "")
+	t.Setenv("SERVERDASH_JWT_SECRET", "")
 
 	secret := resolveJWTSecret(dir)
 
@@ -33,7 +33,7 @@ func TestResolveJWTSecret_GeneratesNew(t *testing.T) {
 // already exists with a known value, resolveJWTSecret returns that value.
 func TestResolveJWTSecret_LoadsExisting(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("WEBCASA_JWT_SECRET", "")
+	t.Setenv("SERVERDASH_JWT_SECRET", "")
 
 	knownSecret := "my-pre-existing-secret-value-1234567890abcdef"
 	secretFile := filepath.Join(dir, ".jwt_secret")
@@ -48,14 +48,14 @@ func TestResolveJWTSecret_LoadsExisting(t *testing.T) {
 	}
 }
 
-// TestResolveJWTSecret_EnvOverride verifies that when WEBCASA_JWT_SECRET is
+// TestResolveJWTSecret_EnvOverride verifies that when SERVERDASH_JWT_SECRET is
 // set to a custom (non-default) value, resolveJWTSecret returns that value,
 // ignoring any file on disk.
 func TestResolveJWTSecret_EnvOverride(t *testing.T) {
 	dir := t.TempDir()
 
 	customSecret := "env-override-secret-abc123"
-	t.Setenv("WEBCASA_JWT_SECRET", customSecret)
+	t.Setenv("SERVERDASH_JWT_SECRET", customSecret)
 
 	// Also write a different secret to the file, to confirm env takes priority
 	secretFile := filepath.Join(dir, ".jwt_secret")
@@ -70,18 +70,18 @@ func TestResolveJWTSecret_EnvOverride(t *testing.T) {
 	}
 }
 
-// TestResolveJWTSecret_IgnoresOldDefault verifies that when WEBCASA_JWT_SECRET
+// TestResolveJWTSecret_IgnoresOldDefault verifies that when SERVERDASH_JWT_SECRET
 // is set to a known insecure default, the function ignores it and generates a
 // new random secret instead.
 func TestResolveJWTSecret_IgnoresOldDefault(t *testing.T) {
 	insecureDefaults := []string{
-		"webcasa-change-me-in-production",
+		"serverdash-change-me-in-production",
 		"change-me-in-production",
 	}
 	for _, oldDefault := range insecureDefaults {
 		t.Run(oldDefault, func(t *testing.T) {
 			dir := t.TempDir()
-			t.Setenv("WEBCASA_JWT_SECRET", oldDefault)
+			t.Setenv("SERVERDASH_JWT_SECRET", oldDefault)
 
 			secret := resolveJWTSecret(dir)
 
@@ -100,7 +100,7 @@ func TestResolveJWTSecret_IgnoresOldDefault(t *testing.T) {
 // the value is persisted and reloaded.
 func TestResolveJWTSecret_Persistence(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("WEBCASA_JWT_SECRET", "")
+	t.Setenv("SERVERDASH_JWT_SECRET", "")
 
 	first := resolveJWTSecret(dir)
 	second := resolveJWTSecret(dir)
@@ -114,7 +114,7 @@ func TestResolveJWTSecret_Persistence(t *testing.T) {
 // is exactly 64 hex characters (encoding 32 random bytes).
 func TestResolveJWTSecret_SecretLength(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("WEBCASA_JWT_SECRET", "")
+	t.Setenv("SERVERDASH_JWT_SECRET", "")
 
 	secret := resolveJWTSecret(dir)
 
@@ -132,7 +132,7 @@ func TestResolveJWTSecret_SecretLength(t *testing.T) {
 // file is created with 0600 permissions (owner read/write only).
 func TestResolveJWTSecret_FilePermissions(t *testing.T) {
 	dir := t.TempDir()
-	t.Setenv("WEBCASA_JWT_SECRET", "")
+	t.Setenv("SERVERDASH_JWT_SECRET", "")
 
 	resolveJWTSecret(dir)
 

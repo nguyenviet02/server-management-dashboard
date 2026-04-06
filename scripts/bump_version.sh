@@ -1,59 +1,58 @@
 #!/bin/bash
-# 自动更新 WebCasa 版本号的脚本
+# Update ServerDash version script
 
 set -e
 
-# 获取脚本所在目录并进入项目根目录
+# Move to project root
 cd "$(dirname "$0")/.."
 
-# 检查是否提供了版本号
+# Validate input version
 if [ -z "$1" ]; then
-    echo "错误: 请提供一个新的版本号。"
-    echo "用法: $0 <new_version>"
-    echo "示例: $0 0.5.1"
+    echo "Error: please provide a new version number."
+    echo "Usage: $0 <new_version>"
+    echo "Example: $0 0.5.1"
     exit 1
 fi
 
 NEW_VERSION=$1
 
-# 检查版本号格式 (基本数字和点的组合)
+# Validate semantic version format
 if ! [[ "$NEW_VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-.*)?$ ]]; then
-    echo "错误: 版本号格式不正确，建议使用语义化版本 (例如: 1.2.3 或 1.2.3-rc1)。"
+    echo "Error: invalid version format. Use semver like 1.2.3 or 1.2.3-rc1."
     exit 1
 fi
 
 OLD_VERSION=$(cat VERSION | tr -d '[:space:]')
 
-echo "当前版本: $OLD_VERSION"
-echo "目标版本: $NEW_VERSION"
-echo "正在修改..."
+echo "Current version: $OLD_VERSION"
+echo "Target version: $NEW_VERSION"
+echo "Updating files..."
 
-# 1. 更新 /VERSION (真相源)
+# 1. Update /VERSION
 echo "$NEW_VERSION" > VERSION
-echo "✅ 更新 VERSION 文件"
+echo "✅ Updated VERSION file"
 
-# 2. 更新 web/package.json 和 web/package-lock.json
+# 2. Update web/package.json and web/package-lock.json
 cd web
 npm version "$NEW_VERSION" --no-git-tag-version --allow-same-version
 cd ..
-echo "✅ 更新 web/package.json 和 package-lock.json"
+echo "✅ Updated web/package.json and package-lock.json"
 
-# 3. 更新 install.sh 中的 fallback 版本号（用正则匹配任意旧版本号）
+# 3. Update install.sh fallback version
 sed -i "s/|| echo \"[0-9][0-9.]*[0-9]\")/|| echo \"$NEW_VERSION\")/g" install.sh
-sed -i "s/WEBCASA_VERSION=\"[0-9][0-9.]*[0-9]\"/WEBCASA_VERSION=\"$NEW_VERSION\"/g" install.sh
-echo "✅ 更新 install.sh 中的 fallback 版本"
+sed -i "s/SERVERDASH_VERSION=\"[0-9][0-9.]*[0-9]\"/SERVERDASH_VERSION=\"$NEW_VERSION\"/g" install.sh
+echo "✅ Updated install.sh fallback version"
 
-# 4. 更新 memory.md 中的状态记录（用正则匹配任意旧版本号）
-sed -i "s/- \*\*版本\*\*: \`[0-9][0-9.]*[0-9]\`/- \*\*版本\*\*: \`$NEW_VERSION\`/g" memory.md
-echo "✅ 更新 memory.md 中的版本记录"
+# 4. Update version record in memory.md
+sed -i "s/- \*\*Version\*\*: see \/VERSION \(single source of truth\)/- **Version**: see \/VERSION (single source of truth)/g" memory.md
+echo "✅ Verified memory.md version record"
 
 echo "--------------------------------------------------"
-echo "🎉 版本号已成功更新为 $NEW_VERSION"
-echo "提示: 请记得手动更新 changelog.md 添加新版本的更新日志。"
-echo "如果你准备好提交更改，可以运行以下命令:"
+echo "🎉 Version updated to $NEW_VERSION"
+echo "Tip: remember to update changelog.md manually."
+echo "If you are ready to commit, run:"
 echo ""
 echo "git add VERSION web/package.json web/package-lock.json install.sh memory.md"
 echo "git commit -m \"chore: bump version to $NEW_VERSION\""
 echo "git tag v$NEW_VERSION"
 echo "git push origin main --tags"
-

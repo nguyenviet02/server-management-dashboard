@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strconv"
 
-	"github.com/web-casa/webcasa/internal/config"
-	"github.com/web-casa/webcasa/internal/service"
+	"github.com/nguyenviet02/server-management-dashboard/internal/config"
+	"github.com/nguyenviet02/server-management-dashboard/internal/service"
 	"github.com/gin-gonic/gin"
 )
 

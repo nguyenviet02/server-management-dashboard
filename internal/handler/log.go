@@ -10,7 +10,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/web-casa/webcasa/internal/config"
+	"github.com/nguyenviet02/server-management-dashboard/internal/config"
 	"github.com/gin-gonic/gin"
 )
 
@@ -144,7 +144,7 @@ func tailFile(filePath string, n int, search string) ([]string, error) {
 	return allLines, nil
 }
 
-// GetSystemLog returns the WebCasa application system log
+// GetSystemLog returns the ServerDash application system log
 func (h *LogHandler) GetSystemLog(c *gin.Context) {
 	linesStr := c.DefaultQuery("lines", "200")
 	search := c.DefaultQuery("search", "")
@@ -155,7 +155,7 @@ func (h *LogHandler) GetSystemLog(c *gin.Context) {
 	}
 
 	// Try journalctl first (systemd service)
-	cmd := exec.Command("journalctl", "-u", "webcasa", "--no-pager", "-n", strconv.Itoa(lines), "--output", "short-iso")
+	cmd := exec.Command("journalctl", "-u", "serverdash", "--no-pager", "-n", strconv.Itoa(lines), "--output", "short-iso")
 	output, err := cmd.Output()
 	if err == nil {
 		content := strings.Split(strings.TrimSpace(string(output)), "\n")
@@ -172,8 +172,8 @@ func (h *LogHandler) GetSystemLog(c *gin.Context) {
 		return
 	}
 
-	// Fallback: read from webcasa.log file
-	logFile := filepath.Join(h.cfg.LogDir, "webcasa.log")
+	// Fallback: read from serverdash.log file
+	logFile := filepath.Join(h.cfg.LogDir, "serverdash.log")
 	content, err := tailFile(logFile, lines, search)
 	if err != nil {
 		c.JSON(http.StatusOK, gin.H{"lines": []string{}, "source": "file", "error": "System log not found"})

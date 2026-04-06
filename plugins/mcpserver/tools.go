@@ -10,8 +10,8 @@ import (
 
 	"github.com/modelcontextprotocol/go-sdk/mcp"
 
-	"github.com/web-casa/webcasa/internal/model"
-	"github.com/web-casa/webcasa/internal/plugin"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 	"gorm.io/gorm"
 )
 
@@ -124,7 +124,7 @@ func (ts *ToolService) RegisterTools(srv *mcp.Server) {
 	mcp.AddTool(srv, &mcp.Tool{
 		Name:        "list_hosts",
 		Title:       "List Reverse Proxy Hosts",
-		Description: "List all reverse proxy hosts managed by WebCasa. Returns domain, upstream, TLS status, and enabled state.",
+		Description: "List all reverse proxy hosts managed by ServerDash. Returns domain, upstream, TLS status, and enabled state.",
 	}, ts.handleListHosts)
 
 	mcp.AddTool(srv, &mcp.Tool{

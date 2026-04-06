@@ -1,6 +1,6 @@
 <div align="center">
 
-# WebCasa
+# ServerDash
 
 **A lightweight server control panel built for the Vibe Coding era**
 
@@ -69,7 +69,7 @@ Reverse proxy management powered by [Caddy](https://caddyserver.com) with plugin
 - **Process Control** — One-click Caddy start/stop/reload with graceful zero-downtime reload
 - **Caddyfile Editor** — Online editor powered by CodeMirror 6
 - **Multi-User Management** — `admin` / `viewer` roles
-- **Multilingual** — Chinese / English
+- **Multilingual** — English / Vietnamese
 
 ## Quick Start
 
@@ -78,7 +78,7 @@ Reverse proxy management powered by [Caddy](https://caddyserver.com) with plugin
 Supports RHEL 9/10 family distributions: CentOS Stream 9/10, AlmaLinux 9/10, Rocky Linux 9/10, Fedora, openAnolis 23, Alibaba Cloud Linux 3, openEuler 22.03+, Kylin V10, and more.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/web-casa/webcasa/main/install.sh | sudo bash
+curl -fsSL https://raw.githubusercontent.com/nguyenviet02/server-management-dashboard/main/install.sh | sudo bash
 ```
 
 After installation, open `http://YOUR_IP:39921`. On first access, the panel will guide you through creating an administrator account.
@@ -102,8 +102,8 @@ sudo bash install.sh --purge
 ### Docker Installation
 
 ```bash
-git clone https://github.com/web-casa/webcasa.git
-cd webcasa
+git clone https://github.com/nguyenviet02/server-management-dashboard.git
+cd serverdash
 docker compose up -d
 ```
 
@@ -114,14 +114,14 @@ Panel URL: `http://localhost:39921`
 **Requirements:** Go 1.26+, Node.js 24+, GCC
 
 ```bash
-git clone https://github.com/web-casa/webcasa.git
-cd webcasa
+git clone https://github.com/nguyenviet02/server-management-dashboard.git
+cd serverdash
 
 # Build frontend + backend
 make build
 
 # Run
-./webcasa
+./serverdash
 ```
 
 ## Development
@@ -139,7 +139,7 @@ cd web && npm install && npm run dev
 ## Project Structure
 
 ```text
-webcasa/
+serverdash/
 ├── main.go                  # Entry point
 ├── VERSION                  # Version number
 ├── internal/
@@ -169,7 +169,7 @@ webcasa/
 ├── web/                     # React 19 frontend
 │   └── src/
 │       ├── pages/           # 30+ page components
-│       └── locales/         # Chinese and English translations
+│       └── locales/         # English and Vietnamese translations
 ├── install.sh               # One-line installer
 ├── Dockerfile
 └── docker-compose.yml
@@ -179,20 +179,20 @@ webcasa/
 
 | Environment Variable | Default | Description |
 |----------|--------|------|
-| `WEBCASA_PORT` | `39921` | Panel port |
-| `WEBCASA_DATA_DIR` | `./data` | Data directory |
-| `WEBCASA_DB_PATH` | `data/webcasa.db` | Database path |
-| `WEBCASA_JWT_SECRET` | Auto-generated | JWT signing secret |
-| `WEBCASA_CADDY_BIN` | `caddy` | Caddy binary path |
-| `WEBCASA_CADDYFILE_PATH` | `data/Caddyfile` | Caddyfile path |
-| `WEBCASA_LOG_DIR` | `data/logs` | Log directory |
+| `SERVERDASH_PORT` | `39921` | Panel port |
+| `SERVERDASH_DATA_DIR` | `./data` | Data directory |
+| `SERVERDASH_DB_PATH` | `data/serverdash.db` | Database path |
+| `SERVERDASH_JWT_SECRET` | Auto-generated | JWT signing secret |
+| `SERVERDASH_CADDY_BIN` | `caddy` | Caddy binary path |
+| `SERVERDASH_CADDYFILE_PATH` | `data/Caddyfile` | Caddyfile path |
+| `SERVERDASH_LOG_DIR` | `data/logs` | Log directory |
 
 ## Tech Stack
 
 - **Backend**: Go 1.26+ / Gin / GORM / SQLite
 - **Frontend**: React 19 / Vite 7 / Radix UI / Tailwind CSS / Zustand
 - **Proxy**: Caddy 2.x
-- **i18n**: react-i18next (Chinese / English)
+- **i18n**: react-i18next (English / Vietnamese)
 
 ## License
 

@@ -7,7 +7,7 @@ import (
 	"os"
 	"testing"
 
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 	"gorm.io/gorm"
 )
 

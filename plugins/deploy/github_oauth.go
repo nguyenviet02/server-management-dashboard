@@ -14,8 +14,8 @@ import (
 	"sync"
 	"time"
 
-	"github.com/web-casa/webcasa/internal/crypto"
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	"github.com/nguyenviet02/server-management-dashboard/internal/crypto"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 	"gorm.io/gorm"
 )
 

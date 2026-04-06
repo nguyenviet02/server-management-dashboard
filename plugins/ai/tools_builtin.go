@@ -10,7 +10,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // RegisterBuiltinTools registers all built-in tools with the registry.

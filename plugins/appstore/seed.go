@@ -19,7 +19,6 @@ type seedAppData struct {
 	Name              string   `json:"name"`
 	ShortDesc         string   `json:"short_desc"`
 	Description       string   `json:"description"`
-	DescZh            string   `json:"desc_zh"`
 	Version           string   `json:"version"`
 	Author            string   `json:"author"`
 	Categories        []string `json:"categories"`
@@ -77,7 +76,6 @@ func SeedAppsFromEmbedded(db *gorm.DB, sourceID uint, logger *slog.Logger) {
 			Name:        s.Name,
 			ShortDesc:   s.ShortDesc,
 			Description: s.Description,
-			DescZh:      s.DescZh,
 			Version:     s.Version,
 			Author:      s.Author,
 			Categories:  string(categoriesJSON),

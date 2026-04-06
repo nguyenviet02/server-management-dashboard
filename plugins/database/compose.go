@@ -148,8 +148,8 @@ func generateMySQL(inst *Instance) string {
         limits:
           memory: %s
     labels:
-      webcasa.plugin: database
-      webcasa.instance: "%s"
+      serverdash.plugin: database
+      serverdash.instance: "%s"
 volumes:
   db_data:
 `, inst.Version, inst.ContainerName, commandLine, inst.Port, inst.MemoryLimit, inst.Name)
@@ -187,8 +187,8 @@ func generatePostgres(inst *Instance) string {
         limits:
           memory: %s
     labels:
-      webcasa.plugin: database
-      webcasa.instance: "%s"
+      serverdash.plugin: database
+      serverdash.instance: "%s"
 volumes:
   db_data:
 `, inst.Version, inst.ContainerName, commandLine, inst.Port, volumePath, inst.MemoryLimit, inst.Name)
@@ -219,8 +219,8 @@ func generateMariaDB(inst *Instance) string {
         limits:
           memory: %s
     labels:
-      webcasa.plugin: database
-      webcasa.instance: "%s"
+      serverdash.plugin: database
+      serverdash.instance: "%s"
 volumes:
   db_data:
 `, inst.Version, inst.ContainerName, commandLine, inst.Port, inst.MemoryLimit, inst.Name)
@@ -245,8 +245,8 @@ func generateRedis(inst *Instance) string {
         limits:
           memory: %s
     labels:
-      webcasa.plugin: database
-      webcasa.instance: "%s"
+      serverdash.plugin: database
+      serverdash.instance: "%s"
 volumes:
   db_data:
 `, inst.Version, inst.ContainerName, inst.Port, cmd, inst.MemoryLimit, inst.Name)

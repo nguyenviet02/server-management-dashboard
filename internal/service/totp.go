@@ -11,8 +11,8 @@ import (
 	"io"
 	"math/big"
 
-	"github.com/web-casa/webcasa/internal/config"
-	"github.com/web-casa/webcasa/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/config"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
 	"github.com/pquerna/otp/totp"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
@@ -90,7 +90,7 @@ func (s *TOTPService) GenerateSecret(userID uint) (string, error) {
 	}
 
 	key, err := totp.Generate(totp.GenerateOpts{
-		Issuer:      "WebCasa",
+		Issuer:      "ServerDash",
 		AccountName: user.Username,
 	})
 	if err != nil {

@@ -10,7 +10,7 @@ const getToken = () => localStorage.getItem('token')
 
 export const openAuthenticatedWebSocket = (url) => {
     const token = getToken()
-    return token ? new WebSocket(url, ['webcasa-auth', token]) : new WebSocket(url)
+    return token ? new WebSocket(url, ['serverdash-auth', token]) : new WebSocket(url)
 }
 
 // Attach JWT token to every request

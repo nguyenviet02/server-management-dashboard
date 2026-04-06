@@ -1,7 +1,7 @@
 package firewall
 
 import (
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // Plugin implements the plugin.Plugin interface for firewall management.
@@ -22,7 +22,7 @@ func (p *Plugin) Metadata() pluginpkg.Metadata {
 		Name:        "Firewall",
 		Version:     "1.0.0",
 		Description: "Manage firewalld rules via web UI",
-		Author:      "Web.Casa",
+		Author:      "ServerDash",
 		Priority:    45,
 		Icon:        "Shield",
 		Category:    "tool",
@@ -73,7 +73,7 @@ func (p *Plugin) FrontendManifest() pluginpkg.FrontendManifest {
 	return pluginpkg.FrontendManifest{
 		ID: "firewall",
 		Routes: []pluginpkg.FrontendRoute{
-			{Path: "/firewall", Component: "FirewallManager", Menu: true, Icon: "Shield", Label: "Firewall", LabelZh: "防火墙"},
+			{Path: "/firewall", Component: "FirewallManager", Menu: true, Icon: "Shield", Label: "Firewall"},
 		},
 		MenuGroup: "tool",
 		MenuOrder: 45,

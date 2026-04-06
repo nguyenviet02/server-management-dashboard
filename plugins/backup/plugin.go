@@ -3,7 +3,7 @@ package backup
 import (
 	"fmt"
 
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // Plugin implements the plugin.Plugin interface for backup management.
@@ -24,7 +24,7 @@ func (p *Plugin) Metadata() pluginpkg.Metadata {
 		Name:        "Backup Manager",
 		Version:     "1.0.0",
 		Description: "Backup and restore panel data, Docker volumes, and databases via Kopia",
-		Author:      "Web.Casa",
+		Author:      "ServerDash",
 		Priority:    55,
 		Icon:        "HardDrive",
 		Category:    "tool",
@@ -100,7 +100,7 @@ func (p *Plugin) FrontendManifest() pluginpkg.FrontendManifest {
 	return pluginpkg.FrontendManifest{
 		ID: "backup",
 		Routes: []pluginpkg.FrontendRoute{
-			{Path: "/backup", Component: "BackupManager", Menu: true, Icon: "HardDrive", Label: "Backup", LabelZh: "备份管理"},
+			{Path: "/backup", Component: "BackupManager", Menu: true, Icon: "HardDrive", Label: "Backup"},
 		},
 		MenuGroup: "tool",
 		MenuOrder: 55,

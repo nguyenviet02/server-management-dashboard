@@ -14,8 +14,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/web-casa/webcasa/internal/caddy"
-	"github.com/web-casa/webcasa/internal/plugin"
+	"github.com/nguyenviet02/server-management-dashboard/internal/caddy"
+	"github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 	"gorm.io/gorm"
 )
 
@@ -104,7 +104,7 @@ func (s *Service) CreateRuntimeStream(req *CreateRuntimeRequest, progressCb func
 		memLimit = "256m"
 	}
 
-	containerName := fmt.Sprintf("webcasa-php-fpm-%s", strings.ReplaceAll(req.Version, ".", ""))
+	containerName := fmt.Sprintf("serverdash-php-fpm-%s", strings.ReplaceAll(req.Version, ".", ""))
 	rtDir := filepath.Join(s.dataDir, "runtimes", containerName)
 
 	// Serialize extensions.
@@ -124,7 +124,7 @@ func (s *Service) CreateRuntimeStream(req *CreateRuntimeRequest, progressCb func
 
 	customImage := ""
 	if len(req.Extensions) > 0 {
-		customImage = fmt.Sprintf("webcasa-php-fpm-%s:custom", strings.ReplaceAll(req.Version, ".", ""))
+		customImage = fmt.Sprintf("serverdash-php-fpm-%s:custom", strings.ReplaceAll(req.Version, ".", ""))
 	}
 
 	rt := &PHPRuntime{
@@ -155,14 +155,14 @@ func (s *Service) CreateRuntimeStream(req *CreateRuntimeRequest, progressCb func
 	if err != nil {
 		return nil, fmt.Errorf("generate php.ini: %w", err)
 	}
-	if err := os.WriteFile(filepath.Join(rtDir, "conf.d", "99-webcasa.ini"), []byte(iniContent), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(rtDir, "conf.d", "99-serverdash.ini"), []byte(iniContent), 0644); err != nil {
 		return nil, fmt.Errorf("write php.ini: %w", err)
 	}
 	fpmContent, err := GenerateFPMPoolConf(fpmCfg)
 	if err != nil {
 		return nil, fmt.Errorf("generate fpm.conf: %w", err)
 	}
-	if err := os.WriteFile(filepath.Join(rtDir, "php-fpm.d", "zz-webcasa.conf"), []byte(fpmContent), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(rtDir, "php-fpm.d", "zz-serverdash.conf"), []byte(fpmContent), 0644); err != nil {
 		return nil, fmt.Errorf("write fpm pool conf: %w", err)
 	}
 
@@ -327,8 +327,8 @@ func (s *Service) UpdateConfig(id uint, req *UpdateConfigRequest) error {
 
 	// Back up old config files.
 	var oldIniContent, oldFpmContent []byte
-	iniPath := filepath.Join(rt.DataDir, "conf.d", "99-webcasa.ini")
-	confPath := filepath.Join(rt.DataDir, "php-fpm.d", "zz-webcasa.conf")
+	iniPath := filepath.Join(rt.DataDir, "conf.d", "99-serverdash.ini")
+	confPath := filepath.Join(rt.DataDir, "php-fpm.d", "zz-serverdash.conf")
 
 	if req.PHPConfig != nil {
 		oldIniContent, _ = os.ReadFile(iniPath)
@@ -429,7 +429,7 @@ func (s *Service) InstallExtensions(id uint, extensions []string, progressCb fun
 	rt.Extensions = string(extJSON)
 
 	// Update custom image name.
-	customImage := fmt.Sprintf("webcasa-php-%s-%s:custom", rt.Type, strings.ReplaceAll(rt.Version, ".", ""))
+	customImage := fmt.Sprintf("serverdash-php-%s-%s:custom", rt.Type, strings.ReplaceAll(rt.Version, ".", ""))
 	rt.CustomImage = customImage
 
 	// Save old state for rollback.
@@ -713,7 +713,7 @@ func (s *Service) createFrankenSite(site *PHPSite, req *CreateSiteRequest, progr
 		return nil, fmt.Errorf("allocate port: %w", err)
 	}
 	site.Port = port
-	site.ContainerName = fmt.Sprintf("webcasa-fp-%s", sanitizeName(req.Name))
+	site.ContainerName = fmt.Sprintf("serverdash-fp-%s", sanitizeName(req.Name))
 	site.DataDir = filepath.Join(s.dataDir, "sites", site.ContainerName)
 	site.WorkerMode = req.WorkerMode
 	site.WorkerScript = req.WorkerScript
@@ -742,7 +742,7 @@ func (s *Service) createFrankenSite(site *PHPSite, req *CreateSiteRequest, progr
 	if err != nil {
 		return nil, fmt.Errorf("generate php.ini: %w", err)
 	}
-	if err := os.WriteFile(filepath.Join(site.DataDir, "conf.d", "99-webcasa.ini"), []byte(iniContent), 0644); err != nil {
+	if err := os.WriteFile(filepath.Join(site.DataDir, "conf.d", "99-serverdash.ini"), []byte(iniContent), 0644); err != nil {
 		return nil, fmt.Errorf("write php.ini: %w", err)
 	}
 
@@ -764,7 +764,7 @@ func (s *Service) createFrankenSite(site *PHPSite, req *CreateSiteRequest, progr
 		if err := os.WriteFile(filepath.Join(site.DataDir, "Dockerfile"), []byte(dockerfile), 0644); err != nil {
 			return nil, fmt.Errorf("write Dockerfile: %w", err)
 		}
-		customImage = fmt.Sprintf("webcasa-fp-%s:custom", sanitizeName(req.Name))
+		customImage = fmt.Sprintf("serverdash-fp-%s:custom", sanitizeName(req.Name))
 		extJSON, _ := json.Marshal(req.Extensions)
 		site.Extensions = string(extJSON)
 	}

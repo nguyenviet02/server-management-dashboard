@@ -5,6 +5,11 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 import en from './locales/en.json'
 import vi from './locales/vi.json'
 
+const storedLang = localStorage.getItem('serverdash-lang') || localStorage.getItem('webcasa-lang')
+if (storedLang && !localStorage.getItem('serverdash-lang')) {
+    localStorage.setItem('serverdash-lang', storedLang)
+}
+
 i18n
     .use(LanguageDetector)
     .use(initReactI18next)
@@ -19,7 +24,7 @@ i18n
         },
         detection: {
             order: ['localStorage', 'navigator'],
-            lookupLocalStorage: 'webcasa-lang',
+            lookupLocalStorage: 'serverdash-lang',
             caches: ['localStorage'],
         },
     })

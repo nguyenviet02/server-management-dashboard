@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/web-casa/webcasa/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
 	"github.com/leanovate/gopter/prop"
@@ -219,7 +219,7 @@ func TestProperty10_GroupTagCRUDRoundTrip(t *testing.T) {
 	properties.TestingRun(t)
 }
 
-// Feature: phase6-enhancements, Property 11: Host 分组关联 — For any Host and any Group,
+// Feature: phase6-enhancements, Property 11: Host group association — For any Host and any Group,
 // assigning the Host to the Group should return correct Group info; setting group_id to nil
 // should remove the association.
 // **Validates: Requirements 5.3**
@@ -296,7 +296,7 @@ func TestProperty11_HostGroupAssociation(t *testing.T) {
 	properties.TestingRun(t)
 }
 
-// Feature: phase6-enhancements, Property 12: Host 标签关联 — For any Host and any set of Tags,
+// Feature: phase6-enhancements, Property 12: Host tag association — For any Host and any set of Tags,
 // assigning those tags should return the exact same tag set when querying the Host.
 // **Validates: Requirements 5.4**
 func TestProperty12_HostTagAssociation(t *testing.T) {
@@ -364,7 +364,7 @@ func TestProperty12_HostTagAssociation(t *testing.T) {
 	properties.TestingRun(t)
 }
 
-// Feature: phase6-enhancements, Property 13: Host 筛选正确性 — For any dataset with multiple Hosts
+// Feature: phase6-enhancements, Property 13: Host filtering is correct — For any dataset with multiple Hosts,
 // in different Groups and Tags, filtering by Group returns only that Group's hosts; filtering by Tag
 // returns only hosts with that Tag; filtering by both returns the intersection.
 // **Validates: Requirements 5.5, 5.6, 5.7**
@@ -446,7 +446,7 @@ func TestProperty13_HostFilterCorrectness(t *testing.T) {
 	properties.TestingRun(t)
 }
 
-// Feature: phase6-enhancements, Property 14: 批量启用/禁用 — For any Group and its associated Hosts,
+// Feature: phase6-enhancements, Property 14: batch enable/disable — For any Group and its associated Hosts,
 // batch disable should set all hosts' enabled to false; batch enable should set all to true.
 // **Validates: Requirements 5.9, 5.10**
 func TestProperty14_BatchEnableDisable(t *testing.T) {
@@ -514,7 +514,7 @@ func TestProperty14_BatchEnableDisable(t *testing.T) {
 	properties.TestingRun(t)
 }
 
-// Feature: phase6-enhancements, Property 15: 删除 Group 解除关联 — For any Group with associated
+// Feature: phase6-enhancements, Property 15: deleting a Group unlinks associations — For any Group with associated
 // Hosts, deleting the Group should leave the Hosts intact with group_id set to NULL.
 // **Validates: Requirements 5.12**
 func TestProperty15_DeleteGroupUnlinksHosts(t *testing.T) {

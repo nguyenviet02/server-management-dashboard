@@ -5,7 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // Plugin implements the plugin.Plugin interface for project deployment.
@@ -26,7 +26,7 @@ func (p *Plugin) Metadata() pluginpkg.Metadata {
 		Name:        "Project Deploy",
 		Version:     "1.0.0",
 		Description: "Source code deployment for Node.js, Go, PHP, Python projects with auto-detection and process management",
-		Author:      "Web.Casa",
+		Author:      "ServerDash",
 		Priority:    5,
 		Icon:        "Rocket",
 		Category:    "deploy",
@@ -161,9 +161,9 @@ func (p *Plugin) FrontendManifest() pluginpkg.FrontendManifest {
 	return pluginpkg.FrontendManifest{
 		ID: "deploy",
 		Routes: []pluginpkg.FrontendRoute{
-			{Path: "/deploy", Component: "ProjectList", Menu: true, Icon: "Rocket", Label: "Projects", LabelZh: "项目部署"},
-			{Path: "/deploy/create", Component: "ProjectCreate", Label: "Create Project", LabelZh: "创建项目"},
-			{Path: "/deploy/:id", Component: "ProjectDetail", Label: "Project Detail", LabelZh: "项目详情"},
+			{Path: "/deploy", Component: "ProjectList", Menu: true, Icon: "Rocket", Label: "Projects"},
+			{Path: "/deploy/create", Component: "ProjectCreate", Label: "Create Project"},
+			{Path: "/deploy/:id", Component: "ProjectDetail", Label: "Project Detail"},
 		},
 		MenuGroup: "deploy",
 		MenuOrder: 20,

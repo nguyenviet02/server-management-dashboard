@@ -5,8 +5,8 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/web-casa/webcasa/internal/model"
-	"github.com/web-casa/webcasa/internal/service"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/service"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )

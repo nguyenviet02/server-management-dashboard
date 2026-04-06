@@ -47,7 +47,7 @@ var ProviderPresets = map[string]ProviderPreset{
 		EmbeddingModels: nil, // Moonshot does not offer embedding models
 	},
 	"zhipu": {
-		Name:            "智谱",
+		Name:            "Zhipu AI",
 		BaseURL:         "https://open.bigmodel.cn/api/paas",
 		APIFormat:       "openai-chat",
 		Models:          []string{"glm-4-flash", "glm-4"},

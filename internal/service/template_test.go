@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/web-casa/webcasa/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
 	"github.com/leanovate/gopter/prop"
@@ -143,7 +143,7 @@ func TestProperty16_HostTemplateHostRoundTrip(t *testing.T) {
 	properties.TestingRun(t)
 }
 
-// Feature: phase6-enhancements, Property 17: 模板导出导入 round-trip — For any valid Template
+// Feature: phase6-enhancements, Property 17: template export/import round-trip — For any valid Template
 // config snapshot JSON, export then import produces an equivalent Template record.
 // **Validates: Requirements 6.11**
 func TestProperty17_TemplateExportImportRoundTrip(t *testing.T) {
@@ -232,7 +232,7 @@ func TestProperty17_TemplateExportImportRoundTrip(t *testing.T) {
 	properties.TestingRun(t)
 }
 
-// Feature: phase6-enhancements, Property 18: 预设模板不可变 — For any type="preset" template,
+// Feature: phase6-enhancements, Property 18: preset templates are immutable — For any type="preset" template,
 // delete and update operations should be rejected with an error.
 // **Validates: Requirements 6.9**
 func TestProperty18_PresetTemplatesImmutable(t *testing.T) {
@@ -292,7 +292,7 @@ func TestProperty18_PresetTemplatesImmutable(t *testing.T) {
 	properties.TestingRun(t)
 }
 
-// Feature: phase6-enhancements, Property 19: 无效模板 JSON 拒绝导入 — For any invalid JSON string
+// Feature: phase6-enhancements, Property 19: invalid template JSON is rejected — For any invalid JSON string
 // (syntax errors, missing required fields like host_type), template import should return an error.
 // **Validates: Requirements 6.7**
 func TestProperty19_InvalidTemplateJSONRejected(t *testing.T) {

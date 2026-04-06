@@ -3,7 +3,7 @@ package handler
 import (
 	"net/http"
 
-	"github.com/web-casa/webcasa/internal/service"
+	"github.com/nguyenviet02/server-management-dashboard/internal/service"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )

@@ -10,10 +10,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/web-casa/webcasa/internal/caddy"
-	"github.com/web-casa/webcasa/internal/config"
-	"github.com/web-casa/webcasa/internal/model"
-	"github.com/web-casa/webcasa/internal/service"
+	"github.com/nguyenviet02/server-management-dashboard/internal/caddy"
+	"github.com/nguyenviet02/server-management-dashboard/internal/config"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/service"
 	"github.com/gin-gonic/gin"
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
@@ -50,7 +50,7 @@ func setupAuditTestDB(t *testing.T, name string) *gorm.DB {
 
 func setupAuditTestServices(t *testing.T, db *gorm.DB) (*service.HostService, *service.GroupService, *service.TagService, *service.TemplateService) {
 	t.Helper()
-	tmpDir, err := os.MkdirTemp("", "webcasa-audit-test-*")
+	tmpDir, err := os.MkdirTemp("", "serverdash-audit-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -85,7 +85,7 @@ func countAuditLogs(db *gorm.DB) int64 {
 
 var auditTestCounter atomic.Int64
 
-// Feature: phase6-enhancements, Property 20: 变更操作产生审计日志
+// Feature: phase6-enhancements, Property 20: mutation operations produce audit logs
 // For any successful mutation operation (clone Host, Group/Tag CRUD, Template CRUD/import/export),
 // the audit log table should contain a new corresponding record after the operation completes.
 // **Validates: Requirements 1.6, 4.9, 5.11, 6.10**

@@ -43,7 +43,7 @@ func GenerateToken(userID uint, username, secret string) (string, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(24 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "webcasa",
+			Issuer:    "serverdash",
 		},
 	}
 
@@ -60,7 +60,7 @@ func GenerateTempToken(userID uint, username, secret string) (string, error) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(5 * time.Minute)),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
-			Issuer:    "webcasa",
+			Issuer:    "serverdash",
 		},
 	}
 
@@ -225,7 +225,7 @@ func isWebSocketUpgrade(r *http.Request) bool {
 func parseWebSocketProtocolToken(r *http.Request) string {
 	for _, part := range strings.Split(r.Header.Get("Sec-WebSocket-Protocol"), ",") {
 		protocol := strings.TrimSpace(part)
-		if protocol == "" || protocol == "webcasa-auth" {
+		if protocol == "" || protocol == "serverdash-auth" || protocol == "webcasa-auth" {
 			continue
 		}
 		return protocol

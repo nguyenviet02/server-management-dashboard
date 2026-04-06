@@ -584,7 +584,7 @@ func readAll(r interface{ Read([]byte) (int, error) }, maxBytes int) ([]byte, er
 // ── WebSocket Log Streaming ──
 
 var wsUpgrader = websocket.Upgrader{
-	Subprotocols: []string{"webcasa-auth"},
+	Subprotocols: []string{"serverdash-auth", "webcasa-auth"},
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
 		if origin == "" {

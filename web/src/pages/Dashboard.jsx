@@ -366,7 +366,7 @@ export default function Dashboard() {
                     <InfoRow label={t('dashboard.cpu_model')} value={system.cpu_model || '-'} />
                     <InfoRow label={t('dashboard.cpu_cores')} value={system.cpu_cores ?? '-'} />
                     <InfoRow label={t('dashboard.uptime')} value={formatUptime(system.uptime)} />
-                    <InfoRow label="WebCasa" value={`v${system.panel_version || '-'}`} />
+                    <InfoRow label="ServerDash" value={`v${system.panel_version || '-'}`} />
                     <InfoRow
                         label="Caddy"
                         value={

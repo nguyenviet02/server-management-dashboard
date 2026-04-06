@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/web-casa/webcasa/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
 	"gorm.io/gorm"
 )
 

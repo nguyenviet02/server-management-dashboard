@@ -1,5 +1,5 @@
 // seedgen generates a gzipped JSON file of app store seed data from a local
-// Runtipi-compatible app repository. The output is embedded into the WebCasa
+// Runtipi-compatible app repository. The output is embedded into the ServerDash
 // binary via go:embed so the app store is immediately populated on first run.
 //
 // Usage: go run ./plugins/appstore/cmd/seedgen <repo-path> <output.json.gz>
@@ -11,7 +11,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/web-casa/webcasa/plugins/appstore"
+	"github.com/nguyenviet02/server-management-dashboard/plugins/appstore"
 )
 
 // SeedApp is the JSON-serializable format for embedded seed data.
@@ -21,7 +21,6 @@ type SeedApp struct {
 	Name        string               `json:"name"`
 	ShortDesc   string               `json:"short_desc"`
 	Description string               `json:"description,omitempty"`
-	DescZh      string               `json:"desc_zh,omitempty"`
 	Version     string               `json:"version"`
 	Author      string               `json:"author"`
 	Categories  []string             `json:"categories"`
@@ -84,7 +83,6 @@ func main() {
 			Name:              app.Config.Name,
 			ShortDesc:         app.Config.ShortDesc,
 			Description:       app.Description,
-			DescZh:            app.DescZh,
 			Version:           app.Config.Version,
 			Author:            app.Config.Author,
 			Categories:        app.Config.Categories,

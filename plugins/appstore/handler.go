@@ -27,7 +27,7 @@ func NewHandler(svc *Service, tplSvc *TemplateService) *Handler {
 // ── App Catalog ──
 
 // ListApps returns paginated apps with optional category and search filters.
-// GET /api/plugins/appstore/apps?category=&search=&page=1&page_size=24&lang=zh
+// GET /api/plugins/appstore/apps?category=&search=&page=1&page_size=24&lang=vi
 func (h *Handler) ListApps(c *gin.Context) {
 	category := c.Query("category")
 	search := c.Query("search")
@@ -52,7 +52,7 @@ func (h *Handler) ListApps(c *gin.Context) {
 }
 
 // GetApp returns a single app with full details (including compose and description).
-// GET /api/plugins/appstore/apps/:id?lang=zh
+// GET /api/plugins/appstore/apps/:id?lang=vi
 func (h *Handler) GetApp(c *gin.Context) {
 	id, err := parseID(c)
 	if err != nil {
@@ -69,11 +69,7 @@ func (h *Handler) GetApp(c *gin.Context) {
 	// Apply i18n translations
 	applyI18n(app, lang)
 
-	// Use localized description if available
 	description := app.Description
-	if lang == "zh" && app.DescZh != "" {
-		description = app.DescZh
-	}
 
 	// Translate form field labels/hints
 	formFields := applyFormFieldsI18n(app.FormFields, app.I18nJSON, lang)

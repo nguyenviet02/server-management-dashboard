@@ -3,7 +3,7 @@ package cronjob
 import (
 	"fmt"
 
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // Plugin implements the plugin.Plugin interface for cron job management.
@@ -24,7 +24,7 @@ func (p *Plugin) Metadata() pluginpkg.Metadata {
 		Name:        "Cron Jobs",
 		Version:     "1.0.0",
 		Description: "General-purpose scheduled task management with shell command execution",
-		Author:      "Web.Casa",
+		Author:      "ServerDash",
 		Priority:    50,
 		Icon:        "Clock",
 		Category:    "management",
@@ -80,7 +80,7 @@ func (p *Plugin) FrontendManifest() pluginpkg.FrontendManifest {
 	return pluginpkg.FrontendManifest{
 		ID: "cronjob",
 		Routes: []pluginpkg.FrontendRoute{
-			{Path: "/cronjob", Component: "CronJobManager", Menu: true, Icon: "Clock", Label: "Cron Jobs", LabelZh: "定时任务"},
+			{Path: "/cronjob", Component: "CronJobManager", Menu: true, Icon: "Clock", Label: "Cron Jobs"},
 		},
 		MenuGroup: "tool",
 		MenuOrder: 42,

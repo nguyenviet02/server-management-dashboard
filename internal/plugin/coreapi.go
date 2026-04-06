@@ -17,10 +17,10 @@ import (
 	"time"
 
 	"github.com/robfig/cron/v3"
-	"github.com/web-casa/webcasa/internal/caddy"
-	"github.com/web-casa/webcasa/internal/crypto"
-	"github.com/web-casa/webcasa/internal/model"
-	"github.com/web-casa/webcasa/internal/service"
+	"github.com/nguyenviet02/server-management-dashboard/internal/caddy"
+	"github.com/nguyenviet02/server-management-dashboard/internal/crypto"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/service"
 	"gorm.io/gorm"
 )
 

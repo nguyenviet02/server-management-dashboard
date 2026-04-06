@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/web-casa/webcasa/internal/caddy"
+	"github.com/nguyenviet02/server-management-dashboard/internal/caddy"
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
 )

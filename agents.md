@@ -4,7 +4,7 @@
 
 ## Project Overview
 
-WebCasa (https://web.casa) is an AI-First lightweight server control panel built on Caddy. It starts as a reverse proxy management panel (Lite) and extends to a full server management platform (Pro) through a compile-time plugin system.
+ServerDash (https://web.casa) is an AI-First lightweight server control panel built on Caddy. It starts as a reverse proxy management panel (Lite) and extends to a full server management platform (Pro) through a compile-time plugin system.
 
 **Current version**: 0.9.x (see `VERSION` file)
 
@@ -30,7 +30,7 @@ WebCasa (https://web.casa) is an AI-First lightweight server control panel built
 main.go                          -> Entry point, route registration, plugin init, SPA serving
 VERSION                          -> Version number (single source of truth)
 internal/
-  config/config.go               -> Env var config loading (WEBCASA_* vars)
+  config/config.go               -> Env var config loading (SERVERDASH_* vars)
   model/model.go                 -> Core GORM models (Host, Upstream, Route, User, etc.)
   database/database.go           -> SQLite init, auto-migrate, WAL mode
   auth/                          -> JWT, bcrypt, TOTP, ALTCHA PoW, rate limiter

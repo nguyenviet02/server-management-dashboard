@@ -3,8 +3,8 @@ package database
 import (
 	"log"
 
-	"github.com/web-casa/webcasa/internal/model"
-	"github.com/web-casa/webcasa/internal/notify"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/notify"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"

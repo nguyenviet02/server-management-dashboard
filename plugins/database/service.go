@@ -116,7 +116,7 @@ func (s *Service) CreateInstance(req *CreateInstanceRequest) (*Instance, error) 
 		memLimit = "0.5g"
 	}
 
-	containerName := "webcasa-db-" + safeName
+	containerName := "serverdash-db-" + safeName
 
 	// Serialize engine config to JSON.
 	var configJSON string
@@ -235,7 +235,7 @@ func (s *Service) CreateInstanceStream(req *CreateInstanceRequest, progressCb fu
 		memLimit = "0.5g"
 	}
 
-	containerName := "webcasa-db-" + safeName
+	containerName := "serverdash-db-" + safeName
 
 	var configJSON string
 	if req.Config != nil {

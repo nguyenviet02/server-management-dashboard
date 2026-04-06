@@ -3,7 +3,7 @@ package filemanager
 import (
 	"time"
 
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // Plugin implements the plugin.Plugin interface for File Manager + Terminal.
@@ -26,7 +26,7 @@ func (p *Plugin) Metadata() pluginpkg.Metadata {
 		Name:        "File Manager",
 		Version:     "1.0.0",
 		Description: "File browser, online editor, and web terminal",
-		Author:      "Web.Casa",
+		Author:      "ServerDash",
 		Priority:    40,
 		Icon:        "FolderOpen",
 		Category:    "tool",
@@ -106,9 +106,9 @@ func (p *Plugin) FrontendManifest() pluginpkg.FrontendManifest {
 	return pluginpkg.FrontendManifest{
 		ID: "filemanager",
 		Routes: []pluginpkg.FrontendRoute{
-			{Path: "/files", Component: "FileManager", Menu: true, Icon: "FolderOpen", Label: "Files", LabelZh: "文件管理"},
-			{Path: "/files/edit", Component: "FileEditor", Label: "File Editor", LabelZh: "文件编辑"},
-			{Path: "/terminal", Component: "WebTerminal", Menu: true, Icon: "SquareTerminal", Label: "Terminal", LabelZh: "终端"},
+			{Path: "/files", Component: "FileManager", Menu: true, Icon: "FolderOpen", Label: "Files"},
+			{Path: "/files/edit", Component: "FileEditor", Label: "File Editor"},
+			{Path: "/terminal", Component: "WebTerminal", Menu: true, Icon: "SquareTerminal", Label: "Terminal"},
 		},
 		MenuGroup: "tool",
 		MenuOrder: 40,

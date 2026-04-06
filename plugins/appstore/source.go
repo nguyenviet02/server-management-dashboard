@@ -271,7 +271,6 @@ func (sm *SourceManager) syncApps(sourceID uint, repoPath string) error {
 			Deprecated:  app.Config.Deprecated,
 			NoGUI:       app.Config.NoGUI,
 			ForceExpose: app.Config.ForceExpose,
-			DescZh:      app.DescZh,
 		}
 
 		// Store i18n data if available
@@ -407,9 +406,9 @@ func SeedOfficialSources(db *gorm.DB) {
 		return
 	}
 
-	// Official Web.Casa app source (Runtipi-compatible with Chinese translations)
+	// Official ServerDash app source (Runtipi-compatible with Chinese translations)
 	db.Create(&AppSource{
-		Name:       "Web.Casa App Store",
+		Name:       "ServerDash App Store",
 		URL:        "https://github.com/web-casa/appstore",
 		Branch:     "master",
 		Kind:       "app",

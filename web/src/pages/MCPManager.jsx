@@ -101,7 +101,7 @@ export default function MCPManager() {
                     <Box style={{ background: 'var(--cp-code-bg)', border: '1px solid var(--cp-border)', borderRadius: 8, padding: 12 }}>
                         <pre className="log-viewer" style={{ margin: 0, fontSize: 12, color: 'var(--cp-text)' }}>{`{
   "mcpServers": {
-    "webcasa": {
+    "serverdash": {
       "type": "streamable-http",
       "url": "${mcpEndpoint}",
       "headers": {

@@ -11,9 +11,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/web-casa/webcasa/internal/auth"
-	"github.com/web-casa/webcasa/internal/config"
-	"github.com/web-casa/webcasa/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/auth"
+	"github.com/nguyenviet02/server-management-dashboard/internal/config"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
 	"github.com/gin-gonic/gin"
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
@@ -89,7 +89,7 @@ func decryptTestSecret(t *testing.T, encryptedSecret string) string {
 	return string(plaintext)
 }
 
-// Feature: phase6-enhancements, Property 4: TOTP 生成与验证 round-trip — generated TOTP code
+// Feature: phase6-enhancements, Property 4: TOTP generate/verify round-trip — generated TOTP code
 // should pass verification.
 // **Validates: Requirements 4.1, 4.3**
 func TestProperty4_TOTPGenerateVerifyRoundTrip(t *testing.T) {
@@ -141,7 +141,7 @@ func TestProperty4_TOTPGenerateVerifyRoundTrip(t *testing.T) {
 	properties.TestingRun(t)
 }
 
-// Feature: phase6-enhancements, Property 5: 恢复码生成格式与数量 — exactly 8 codes, each 8
+// Feature: phase6-enhancements, Property 5: recovery code format and count — exactly 8 codes, each 8
 // alphanumeric chars, bcrypt hashes match.
 // **Validates: Requirements 4.4**
 func TestProperty5_RecoveryCodeFormatAndCount(t *testing.T) {
@@ -282,7 +282,7 @@ func setupTestRouter(t *testing.T, svc *TOTPService, cfg *config.Config) *gin.En
 	return r
 }
 
-// Feature: phase6-enhancements, Property 6: 登录流程依赖 2FA 状态 — with 2FA enabled,
+// Feature: phase6-enhancements, Property 6: login flow depends on 2FA state — with 2FA enabled,
 // password-only login returns requires_2fa; without 2FA, password login gets JWT.
 // **Validates: Requirements 4.5, 4.10**
 func TestProperty6_LoginFlowDependsOn2FAState(t *testing.T) {
@@ -375,7 +375,7 @@ func enableTestUser2FA(t *testing.T, svc *TOTPService, userID uint) ([]string, s
 	return codes, secret
 }
 
-// Feature: phase6-enhancements, Property 7: 恢复码一次性使用 — first use succeeds, second use
+// Feature: phase6-enhancements, Property 7: recovery codes are one-time-use — first use succeeds, second use
 // of same code fails.
 // **Validates: Requirements 4.6**
 func TestProperty7_RecoveryCodeOneTimeUse(t *testing.T) {
@@ -421,7 +421,7 @@ func TestProperty7_RecoveryCodeOneTimeUse(t *testing.T) {
 	properties.TestingRun(t)
 }
 
-// Feature: phase6-enhancements, Property 8: 无效验证码拒绝登录 — random invalid strings
+// Feature: phase6-enhancements, Property 8: invalid codes reject login — random invalid strings
 // rejected in 2FA verification.
 // **Validates: Requirements 4.7**
 func TestProperty8_InvalidCodeRejected(t *testing.T) {
@@ -452,7 +452,7 @@ func TestProperty8_InvalidCodeRejected(t *testing.T) {
 	properties.TestingRun(t)
 }
 
-// Feature: phase6-enhancements, Property 9: 2FA 禁用 round-trip — after disabling 2FA with
+// Feature: phase6-enhancements, Property 9: 2FA disable round-trip — after disabling 2FA with
 // valid TOTP, login no longer requires 2FA.
 // **Validates: Requirements 4.8**
 func TestProperty9_Disable2FARoundTrip(t *testing.T) {
@@ -593,7 +593,7 @@ func TestEncryptDecryptAESGCM(t *testing.T) {
 		{"empty string", ""},
 		{"short text", "hello"},
 		{"longer text", "the quick brown fox jumps over the lazy dog"},
-		{"unicode", "你好世界🌍"},
+		{"unicode", "hello world 🌍"},
 		{"special chars", "p@$$w0rd!#%&*()"},
 	}
 
@@ -673,7 +673,7 @@ func TestDeriveAESKey_Deterministic(t *testing.T) {
 		{"simple", "my-secret"},
 		{"empty", ""},
 		{"long", "a-very-long-jwt-secret-that-exceeds-32-bytes-in-length-to-test-sha256-hashing"},
-		{"unicode", "秘密🔑"},
+		{"unicode", "secret🔑"},
 	}
 
 	for _, tt := range tests {

@@ -48,7 +48,6 @@ type AppDefinition struct {
 	NoGUI       bool      `gorm:"default:false" json:"no_gui"`
 	ForceExpose bool      `gorm:"default:false" json:"force_expose"`
 	I18nJSON    string    `gorm:"type:text" json:"-"`           // JSON map of lang -> AppI18n
-	DescZh      string    `gorm:"type:text" json:"-"`           // Chinese description markdown
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }

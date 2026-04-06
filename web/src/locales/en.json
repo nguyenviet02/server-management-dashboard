@@ -86,7 +86,7 @@
     "sign_out": "Sign Out"
   },
   "login": {
-    "title": "Sign in to WebCasa",
+    "title": "Sign in to ServerDash",
     "subtitle": "Lightweight Caddy management panel",
     "username": "Username",
     "password": "Password",
@@ -99,9 +99,9 @@
     "captcha_hint": "Slide to complete verification",
     "verify_first": "Please complete security verification first",
     "setup_title": "Create Admin Account",
-    "setup_hint": "This is your first time using WebCasa. Please create an admin account.",
+    "setup_hint": "This is your first time using ServerDash. Please create an admin account.",
     "create_account": "Create Account",
-    "footer": "Powered by Web.Casa",
+    "footer": "Powered by ServerDash",
     "pow": {
       "idle": "Click to verify",
       "solving": "Verifying... {{progress}}%",
@@ -1050,8 +1050,8 @@
     "title": "Plugins",
     "installed": "installed",
     "description": "Manage installed plugins. Enable or disable plugins to extend panel functionality. Changes take effect after restart.",
-    "page_description": "Install, uninstall, and manage plugins to extend Web.Casa functionality.",
-    "empty": "No plugins installed yet. Plugins extend Web.Casa with Docker management, project deployment, AI assistant, and more.",
+    "page_description": "Install, uninstall, and manage plugins to extend ServerDash functionality.",
+    "empty": "No plugins installed yet. Plugins extend ServerDash with Docker management, project deployment, AI assistant, and more.",
     "depends_on": "Depends on",
     "enable_success": "Plugin enabled",
     "disable_success": "Plugin disabled",

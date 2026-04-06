@@ -131,9 +131,9 @@ export default function Layout() {
         <>
             {/* Logo */}
             <Flex align="center" gap="2" p="4" pb="2">
-                <img src={logoImg} alt="WebCasa" style={{ width: 32, height: 32, borderRadius: 8 }} />
+                <img src={logoImg} alt="ServerDash" style={{ width: 32, height: 32, borderRadius: 8 }} />
                 <Text size="4" weight="bold" style={{ color: 'var(--cp-text)' }}>
-                    WebCasa
+                    ServerDash
                 </Text>
                 {isMobile && (
                     <button
@@ -261,9 +261,9 @@ export default function Layout() {
                         <Menu size={22} />
                     </button>
                     <Flex align="center" gap="2">
-                        <img src={logoImg} alt="WebCasa" style={{ width: 24, height: 24, borderRadius: 6 }} />
+                        <img src={logoImg} alt="ServerDash" style={{ width: 24, height: 24, borderRadius: 6 }} />
                         <Text size="3" weight="bold" style={{ color: 'var(--cp-text)' }}>
-                            WebCasa
+                            ServerDash
                         </Text>
                     </Flex>
                     <Box style={{ width: 22 }} /> {/* Spacer for centering */}
@@ -319,7 +319,7 @@ export default function Layout() {
                             fontSize: '0.7rem',
                         }}
                     >
-                        WebCasa v{version}
+                        ServerDash v{version}
                     </Text>
                 )}
             </Box>

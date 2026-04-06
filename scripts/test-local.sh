@@ -24,8 +24,8 @@ for cmd in docker jq node curl; do
     fi
 done
 
-IMAGE_NAME="webcasa-test"
-CONTAINER_NAME="webcasa-test-$$"
+IMAGE_NAME="serverdash-test"
+CONTAINER_NAME="serverdash-test-$$"
 HOST_PORT=39921
 PASS=0
 
@@ -62,7 +62,7 @@ assert() {
 }
 
 echo "============================================"
-echo "  WebCasa Local Docker Integration Test"
+echo "  ServerDash Local Docker Integration Test"
 echo "============================================"
 
 # Step 1: Build Docker image
@@ -74,8 +74,8 @@ echo -e "${GREEN}Image built.${NC}"
 echo -e "\n${YELLOW}[2/6] Starting container...${NC}"
 docker run -d --name "$CONTAINER_NAME" \
     -p "$HOST_PORT:8080" \
-    -e WEBCASA_PORT=8080 \
-    -e WEBCASA_JWT_SECRET=test-secret-local \
+    -e SERVERDASH_PORT=8080 \
+    -e SERVERDASH_JWT_SECRET=test-secret-local \
     -e GIN_MODE=release \
     "$IMAGE_NAME"
 
@@ -182,12 +182,12 @@ FM_RESP=$(auth_post "/api/plugins/filemanager/mkdir" '{"path":"/tmp/fm-test-dir"
 assert "FM: mkdir" "$(echo "$FM_RESP" | jq -e '.status == "ok"' > /dev/null; echo $?)"
 
 # write
-FM_RESP=$(auth_post "/api/plugins/filemanager/write" '{"path":"/tmp/fm-test-dir/hello.txt","content":"Hello WebCasa!"}')
+FM_RESP=$(auth_post "/api/plugins/filemanager/write" '{"path":"/tmp/fm-test-dir/hello.txt","content":"Hello ServerDash!"}')
 assert "FM: write file" "$(echo "$FM_RESP" | jq -e '.status == "ok"' > /dev/null; echo $?)"
 
 # read
 FM_CONTENT=$(auth_get "/api/plugins/filemanager/read?path=/tmp/fm-test-dir/hello.txt" | jq -r '.content')
-assert "FM: read file" "$([ "$FM_CONTENT" = "Hello WebCasa!" ]; echo $?)"
+assert "FM: read file" "$([ "$FM_CONTENT" = "Hello ServerDash!" ]; echo $?)"
 
 # list
 FM_COUNT=$(auth_get "/api/plugins/filemanager/list?path=/tmp/fm-test-dir" | jq '.files | length')

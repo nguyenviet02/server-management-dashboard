@@ -6,9 +6,9 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/web-casa/webcasa/internal/caddy"
-	"github.com/web-casa/webcasa/internal/config"
-	"github.com/web-casa/webcasa/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/caddy"
+	"github.com/nguyenviet02/server-management-dashboard/internal/config"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
 	"github.com/leanovate/gopter/prop"
@@ -55,7 +55,7 @@ func setupTestDB(t *testing.T) *gorm.DB {
 // setupTestHostService creates a HostService backed by the test DB
 func setupTestHostService(t *testing.T, db *gorm.DB) *HostService {
 	t.Helper()
-	tmpDir, err := os.MkdirTemp("", "webcasa-test-*")
+	tmpDir, err := os.MkdirTemp("", "serverdash-test-*")
 	if err != nil {
 		t.Fatalf("failed to create temp dir: %v", err)
 	}
@@ -159,7 +159,7 @@ func createTestHost(t *testing.T, svc *HostService, domain string, numUpstreams,
 	return host
 }
 
-// Feature: phase6-enhancements, Property 1: 克隆产生等价 Host — For any Host with any combination
+// Feature: phase6-enhancements, Property 1: clone produces equivalent Host — For any Host with any combination
 // of main table fields and sub-table data, clone should produce a new Host with all config fields
 // (except ID, Domain, CreatedAt, UpdatedAt) identical, and all sub-table records count and content
 // (except ID, HostID) identical.
@@ -296,7 +296,7 @@ func TestProperty1_CloneProducesEquivalentHost(t *testing.T) {
 	properties.TestingRun(t)
 }
 
-// Feature: phase6-enhancements, Property 2: 克隆产生独立记录 — For any clone operation, the new
+// Feature: phase6-enhancements, Property 2: clone produces independent records — For any clone operation, the new
 // Host ID must differ from source, and all sub-table records' host_id must point to the new Host ID.
 // **Validates: Requirements 1.4**
 func TestProperty2_CloneProducesIndependentRecords(t *testing.T) {

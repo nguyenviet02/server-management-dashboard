@@ -16,7 +16,7 @@ COPY . .
 COPY --from=frontend /app/web/dist ./web/dist
 # seed_apps.json.gz is pre-generated and committed to the repo.
 # Run "make seed-data" to regenerate it before building a release.
-RUN CGO_ENABLED=1 go build -o webcasa .
+RUN CGO_ENABLED=1 go build -o serverdash .
 
 # Runtime stage
 FROM alpine:3.19
@@ -36,19 +36,19 @@ RUN ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/') \
     && rm -f /tmp/caddy /tmp/caddy.tar.gz /tmp/checksums.txt
 
 WORKDIR /app
-COPY --from=backend /app/webcasa .
+COPY --from=backend /app/serverdash .
 COPY --from=backend /app/web/dist ./web/dist
 
 # Create data directory
 RUN mkdir -p /app/data/logs /app/data/backups
 
 # Environment defaults
-ENV WEBCASA_PORT=8080
-ENV WEBCASA_DATA_DIR=/app/data
-ENV WEBCASA_CADDY_BIN=/usr/local/bin/caddy
+ENV SERVERDASH_PORT=8080
+ENV SERVERDASH_DATA_DIR=/app/data
+ENV SERVERDASH_CADDY_BIN=/usr/local/bin/caddy
 
 EXPOSE 8080 80 443
 
 VOLUME ["/app/data"]
 
-CMD ["./webcasa"]
+CMD ["./serverdash"]

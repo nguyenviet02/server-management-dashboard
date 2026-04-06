@@ -8,7 +8,7 @@ import (
 	"log/slog"
 	"time"
 
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 	"gorm.io/gorm"
 )
 
@@ -32,7 +32,7 @@ func (p *Plugin) Metadata() pluginpkg.Metadata {
 		Name:        "AI Assistant",
 		Version:     "1.0.0",
 		Description: "AI-powered chat assistant with error diagnosis and template generation",
-		Author:      "Web.Casa",
+		Author:      "ServerDash",
 		Priority:    30,
 		Icon:        "Bot",
 		Category:    "tool",
@@ -181,7 +181,7 @@ func (p *Plugin) FrontendManifest() pluginpkg.FrontendManifest {
 	return pluginpkg.FrontendManifest{
 		ID: "ai",
 		Routes: []pluginpkg.FrontendRoute{
-			{Path: "/ai/config", Component: "AIConfig", Menu: true, Icon: "Bot", Label: "AI Assistant", LabelZh: "AI 助手"},
+			{Path: "/ai/config", Component: "AIConfig", Menu: true, Icon: "Bot", Label: "AI Assistant"},
 		},
 		MenuGroup: "tool",
 		MenuOrder: 50,

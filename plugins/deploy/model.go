@@ -28,7 +28,7 @@ type Project struct {
 
 	// Deploy mode: bare (systemd) or docker (container)
 	DeployMode    string `gorm:"size:16;default:bare" json:"deploy_mode"` // bare | docker
-	DockerImage   string `gorm:"size:255" json:"docker_image,omitempty"` // e.g. webcasa-project-5:3
+	DockerImage   string `gorm:"size:255" json:"docker_image,omitempty"` // e.g. serverdash-project-5:3
 	ContainerID   string `gorm:"size:128" json:"container_id,omitempty"`
 	ContainerName string `gorm:"size:128" json:"container_name,omitempty"`
 

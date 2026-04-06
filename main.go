@@ -11,28 +11,28 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/web-casa/webcasa/internal/auth"
-	"github.com/web-casa/webcasa/internal/caddy"
-	"github.com/web-casa/webcasa/internal/config"
-	"github.com/web-casa/webcasa/internal/database"
-	"github.com/web-casa/webcasa/internal/handler"
-	"github.com/web-casa/webcasa/internal/model"
-	"github.com/web-casa/webcasa/internal/notify"
-	"github.com/web-casa/webcasa/internal/plugin"
-	"github.com/web-casa/webcasa/internal/service"
-	"github.com/web-casa/webcasa/internal/versioncheck"
-	aiplugin "github.com/web-casa/webcasa/plugins/ai"
-	deployplugin "github.com/web-casa/webcasa/plugins/deploy"
-	dockerplugin "github.com/web-casa/webcasa/plugins/docker"
-	dbplugin "github.com/web-casa/webcasa/plugins/database"
-	fmplugin "github.com/web-casa/webcasa/plugins/filemanager"
-	appstoreplugin "github.com/web-casa/webcasa/plugins/appstore"
-	mcpplugin "github.com/web-casa/webcasa/plugins/mcpserver"
-	backupplugin "github.com/web-casa/webcasa/plugins/backup"
-	monitoringplugin "github.com/web-casa/webcasa/plugins/monitoring"
-	firewallplugin "github.com/web-casa/webcasa/plugins/firewall"
-	phpplugin "github.com/web-casa/webcasa/plugins/php"
-	cronjobplugin "github.com/web-casa/webcasa/plugins/cronjob"
+	"github.com/nguyenviet02/server-management-dashboard/internal/auth"
+	"github.com/nguyenviet02/server-management-dashboard/internal/caddy"
+	"github.com/nguyenviet02/server-management-dashboard/internal/config"
+	"github.com/nguyenviet02/server-management-dashboard/internal/database"
+	"github.com/nguyenviet02/server-management-dashboard/internal/handler"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/notify"
+	"github.com/nguyenviet02/server-management-dashboard/internal/plugin"
+	"github.com/nguyenviet02/server-management-dashboard/internal/service"
+	"github.com/nguyenviet02/server-management-dashboard/internal/versioncheck"
+	aiplugin "github.com/nguyenviet02/server-management-dashboard/plugins/ai"
+	deployplugin "github.com/nguyenviet02/server-management-dashboard/plugins/deploy"
+	dockerplugin "github.com/nguyenviet02/server-management-dashboard/plugins/docker"
+	dbplugin "github.com/nguyenviet02/server-management-dashboard/plugins/database"
+	fmplugin "github.com/nguyenviet02/server-management-dashboard/plugins/filemanager"
+	appstoreplugin "github.com/nguyenviet02/server-management-dashboard/plugins/appstore"
+	mcpplugin "github.com/nguyenviet02/server-management-dashboard/plugins/mcpserver"
+	backupplugin "github.com/nguyenviet02/server-management-dashboard/plugins/backup"
+	monitoringplugin "github.com/nguyenviet02/server-management-dashboard/plugins/monitoring"
+	firewallplugin "github.com/nguyenviet02/server-management-dashboard/plugins/firewall"
+	phpplugin "github.com/nguyenviet02/server-management-dashboard/plugins/php"
+	cronjobplugin "github.com/nguyenviet02/server-management-dashboard/plugins/cronjob"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -50,7 +50,7 @@ func main() {
 			resetPassword()
 			return
 		case "--version", "-v":
-			fmt.Printf("WebCasa v%s\n", Version)
+			fmt.Printf("ServerDash v%s\n", Version)
 			return
 		}
 	}
@@ -87,8 +87,8 @@ func main() {
 	// Setup Gin
 	r := gin.Default()
 
-	// CORS — dynamic origin check: same-origin + localhost dev + WEBCASA_CORS_ORIGINS
-	corsOrigins := os.Getenv("WEBCASA_CORS_ORIGINS") // comma-separated extra origins
+	// CORS — dynamic origin check: same-origin + localhost dev + SERVERDASH_CORS_ORIGINS
+	corsOrigins := os.Getenv("SERVERDASH_CORS_ORIGINS") // comma-separated extra origins
 	r.Use(cors.New(cors.Config{
 		AllowOriginWithContextFunc: func(c *gin.Context, origin string) bool {
 			u, err := url.Parse(origin)
@@ -328,7 +328,7 @@ func main() {
 
 	// ============ Version Checker ============
 	versionChecker := versioncheck.NewChecker(
-		"https://raw.githubusercontent.com/web-casa/webcasa/main/versions.json",
+		"https://raw.githubusercontent.com/nguyenviet02/server-management-dashboard/main/versions.json",
 		slog.Default(),
 	)
 	versionChecker.Start()
@@ -349,7 +349,7 @@ func main() {
 
 	// Start server
 	addr := ":" + cfg.Port
-	log.Printf("🚀 WebCasa starting on http://localhost%s", addr)
+	log.Printf("🚀 ServerDash starting on http://localhost%s", addr)
 	log.Printf("📁 Data directory: %s", cfg.DataDir)
 	log.Printf("📄 Caddyfile path: %s", cfg.CaddyfilePath)
 
@@ -499,7 +499,7 @@ func formatEventMessage(e plugin.Event) string {
 
 // resetPassword handles the --reset-password CLI command
 func resetPassword() {
-	fmt.Println("🔐 WebCasa — 密码重置工具")
+	fmt.Println("🔐 ServerDash password reset tool")
 	fmt.Println("============================")
 
 	// Load config to get DB path
@@ -509,7 +509,7 @@ func resetPassword() {
 	reader := bufio.NewReader(os.Stdin)
 
 	// Get username
-	fmt.Print("请输入用户名 (默认 admin): ")
+	fmt.Print("Enter username (default admin): ")
 	username, _ := reader.ReadString('\n')
 	username = strings.TrimSpace(username)
 	if username == "" {
@@ -517,18 +517,18 @@ func resetPassword() {
 	}
 
 	// Get password
-	fmt.Print("请输入新密码 (至少8位): ")
+	fmt.Print("Enter new password (minimum 8 characters): ")
 	password, _ := reader.ReadString('\n')
 	password = strings.TrimSpace(password)
 	if len(password) < 8 {
-		fmt.Println("❌ 密码长度不能少于8位")
+		fmt.Println("❌ Password must be at least 8 characters")
 		os.Exit(1)
 	}
 
 	// Hash password
 	hash, err := bcrypt.GenerateFromPassword([]byte(password), bcrypt.DefaultCost)
 	if err != nil {
-		fmt.Printf("❌ 密码加密失败: %v\n", err)
+		fmt.Printf("❌ Failed to hash password: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -543,20 +543,20 @@ func resetPassword() {
 			Role:     "admin",
 		}
 		if err := db.Create(&user).Error; err != nil {
-			fmt.Printf("❌ 创建用户失败: %v\n", err)
+			fmt.Printf("❌ Failed to create user: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("✅ 已创建管理员账户: %s\n", username)
+		fmt.Printf("✅ Created admin account: %s\n", username)
 	} else {
 		// User exists — update password
 		user.Password = string(hash)
 		if err := db.Save(&user).Error; err != nil {
-			fmt.Printf("❌ 更新密码失败: %v\n", err)
+			fmt.Printf("❌ Failed to update password: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("✅ 已重置用户 %s 的密码\n", username)
+		fmt.Printf("✅ Reset password for user %s\n", username)
 	}
 
-	fmt.Println("\n请重启 WebCasa 服务后使用新密码登录:")
-	fmt.Println("  systemctl restart webcasa")
+	fmt.Println("\nRestart the ServerDash service, then sign in with the new password:")
+	fmt.Println("  systemctl restart serverdash")
 }

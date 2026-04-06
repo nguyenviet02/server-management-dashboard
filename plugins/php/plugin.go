@@ -3,7 +3,7 @@ package php
 import (
 	"fmt"
 
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // Plugin implements the plugin.Plugin interface for PHP management.
@@ -24,7 +24,7 @@ func (p *Plugin) Metadata() pluginpkg.Metadata {
 		Name:         "PHP",
 		Version:      "1.0.0",
 		Description:  "Manage PHP-FPM and FrankenPHP runtimes, create PHP websites with one click",
-		Author:       "Web.Casa",
+		Author:       "ServerDash",
 		Dependencies: []string{"docker"},
 		Priority:     16,
 		Icon:         "FileCode",
@@ -100,7 +100,7 @@ func (p *Plugin) FrontendManifest() pluginpkg.FrontendManifest {
 	return pluginpkg.FrontendManifest{
 		ID: "php",
 		Routes: []pluginpkg.FrontendRoute{
-			{Path: "/php", Component: "PHPManager", Menu: true, Icon: "FileCode", Label: "PHP", LabelZh: "PHP"},
+			{Path: "/php", Component: "PHPManager", Menu: true, Icon: "FileCode", Label: "PHP"},
 		},
 		MenuGroup: "deploy",
 		MenuOrder: 17,

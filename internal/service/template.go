@@ -6,8 +6,8 @@ import (
 	"log"
 	"time"
 
-	"github.com/web-casa/webcasa/internal/caddy"
-	"github.com/web-casa/webcasa/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/caddy"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
 	"gorm.io/gorm"
 )
 

@@ -3,7 +3,7 @@ package monitoring
 import (
 	"fmt"
 
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // Plugin implements the plugin.Plugin interface for system monitoring.
@@ -24,7 +24,7 @@ func (p *Plugin) Metadata() pluginpkg.Metadata {
 		Name:        "System Monitoring",
 		Version:     "1.0.0",
 		Description: "Real-time system metrics, historical charts, and threshold alerts",
-		Author:      "Web.Casa",
+		Author:      "ServerDash",
 		Priority:    50,
 		Icon:        "Activity",
 		Category:    "monitor",
@@ -84,7 +84,7 @@ func (p *Plugin) FrontendManifest() pluginpkg.FrontendManifest {
 	return pluginpkg.FrontendManifest{
 		ID: "monitoring",
 		Routes: []pluginpkg.FrontendRoute{
-			{Path: "/monitoring", Component: "MonitoringDashboard", Menu: true, Icon: "Activity", Label: "Monitoring", LabelZh: "系统监控"},
+			{Path: "/monitoring", Component: "MonitoringDashboard", Menu: true, Icon: "Activity", Label: "Monitoring"},
 		},
 		MenuGroup: "monitor",
 		MenuOrder: 50,

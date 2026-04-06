@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 # ============================================================================
-#  Web.Casa — One-Click Install Script
-#  https://web.casa
+#  ServerDash — One-Click Install Script
+#  https://github.com/nguyenviet02/server-management-dashboard
 #
 #  Supports: Ubuntu 20+, Debian 11+, CentOS Stream 8+, AlmaLinux 8+, Fedora 38+
-#           openAnolis, Alibaba Cloud Linux, openEuler, openCloudOS, Kylin (银河麒麟)
+#           openAnolis, Alibaba Cloud Linux, openEuler, openCloudOS, Kylin
 #
 #  Usage:
-#    curl -fsSL https://raw.githubusercontent.com/web-casa/webcasa/main/install.sh | bash
+#    curl -fsSL https://raw.githubusercontent.com/nguyenviet02/server-management-dashboard/main/install.sh | bash
 #    or:
 #    bash install.sh
 #
 #  Options:
-#    --uninstall             Remove WebCasa (keeps data by default)
-#    --purge                 Remove WebCasa and all data
+#    --uninstall             Remove ServerDash (keeps data by default)
+#    --purge                 Remove ServerDash and all data
 #    --no-caddy              Skip Caddy installation
 #    --no-docker             Skip Docker group setup
 #    --port PORT             Set panel port (default: 39921)
@@ -43,18 +43,18 @@ fi
 # Auto-detect version: local VERSION file → GitHub latest release → fallback
 SCRIPT_SELF="${BASH_SOURCE[0]:-}"
 if [[ -n "$SCRIPT_SELF" && -f "$(dirname "$SCRIPT_SELF")/VERSION" ]]; then
-    WEBCASA_VERSION="$(cat "$(dirname "$SCRIPT_SELF")/VERSION" | tr -d '[:space:]')"
+    SERVERDASH_VERSION="$(cat "$(dirname "$SCRIPT_SELF")/VERSION" | tr -d '[:space:]')"
 elif command -v curl &>/dev/null; then
-    WEBCASA_VERSION="$(curl -fsSL https://api.github.com/repos/web-casa/webcasa/releases/latest 2>/dev/null | grep -oP '"tag_name":\s*"v?\K[^"]+' || echo "0.9.3")"
+    SERVERDASH_VERSION="$(curl -fsSL https://api.github.com/repos/nguyenviet02/server-management-dashboard/releases/latest 2>/dev/null | grep -oP '"tag_name":\s*"v?\K[^"]+' || echo "0.9.3")"
 else
-    WEBCASA_VERSION="0.9.3"
+    SERVERDASH_VERSION="0.9.3"
 fi
-GITHUB_REPO="web-casa/webcasa"
+GITHUB_REPO="nguyenviet02/server-management-dashboard"
 INSTALL_DIR="/usr/local/bin"
-DATA_DIR="/var/lib/webcasa"
-LOG_DIR="/var/log/webcasa"
-CONFIG_DIR="/etc/webcasa"
-SERVICE_USER="webcasa"
+DATA_DIR="/var/lib/serverdash"
+LOG_DIR="/var/log/serverdash"
+CONFIG_DIR="/etc/serverdash"
+SERVICE_USER="serverdash"
 PANEL_PORT="39921"
 SKIP_CADDY=false
 SKIP_DOCKER_GROUP=false
@@ -122,7 +122,7 @@ detect_os() {
             else
                 OS_FAMILY="rhel"
             fi
-            ;;  # Kylin 银河麒麟
+            ;;  # Kylin
         *)
             # Last-resort auto-detection by package manager
             if command -v apt-get &>/dev/null; then
@@ -207,14 +207,14 @@ parse_args() {
 
 usage() {
     cat <<EOF
-${BOLD}Web.Casa Installer v${WEBCASA_VERSION}${NC}
-https://web.casa
+${BOLD}ServerDash Installer v${SERVERDASH_VERSION}${NC}
+https://github.com/nguyenviet02/server-management-dashboard
 
 Usage: bash install.sh [OPTIONS]
 
 Options:
-  --uninstall      Remove Web.Casa (keeps data)
-  --purge          Remove Web.Casa and all data
+  --uninstall      Remove ServerDash (keeps data)
+  --purge          Remove ServerDash and all data
   --no-caddy       Skip Caddy installation
   --no-docker      Skip Docker group setup
   --port PORT      Set panel port (default: 39921)
@@ -229,7 +229,7 @@ Supported OS (Lite):
   Ubuntu 20.04+, Debian 11+, CentOS Stream 8+,
   AlmaLinux 8+, Rocky Linux 8+, Fedora 38+,
   openAnolis, Alibaba Cloud Linux, openEuler,
-  openCloudOS, Kylin (银河麒麟)
+  openCloudOS, Kylin
 
 Supported OS (Pro — --pro flag):
   Rocky Linux 9/10, AlmaLinux 9/10, CentOS Stream 9/10,
@@ -243,22 +243,61 @@ EOF
 }
 
 # ==================== Uninstall ====================
+
+
+migrate_legacy_install() {
+    if [[ -d /var/lib/webcasa && ! -d "$DATA_DIR" ]]; then
+        info "Migrating data directory: /var/lib/webcasa → $DATA_DIR"
+        mv /var/lib/webcasa "$DATA_DIR"
+    fi
+    if [[ -d /var/log/webcasa && ! -d "$LOG_DIR" ]]; then
+        info "Migrating log directory: /var/log/webcasa → $LOG_DIR"
+        mv /var/log/webcasa "$LOG_DIR"
+    fi
+    if [[ -d /etc/webcasa && ! -d "$CONFIG_DIR" ]]; then
+        info "Migrating config directory: /etc/webcasa → $CONFIG_DIR"
+        mv /etc/webcasa "$CONFIG_DIR"
+    fi
+    if [[ -f /etc/systemd/system/webcasa.service && ! -f /etc/systemd/system/serverdash.service ]]; then
+        rm -f /etc/systemd/system/webcasa.service
+    fi
+    if [[ -f "$INSTALL_DIR/webcasa-server" && ! -f "$INSTALL_DIR/serverdash-server" ]]; then
+        info "Migrating binary: webcasa-server → serverdash-server"
+        mv -f "$INSTALL_DIR/webcasa-server" "$INSTALL_DIR/serverdash-server"
+    fi
+    if [[ -f "$INSTALL_DIR/webcasa" && ! -f "$INSTALL_DIR/serverdash" ]]; then
+        if file "$INSTALL_DIR/webcasa" 2>/dev/null | grep -q "ELF"; then
+            info "Migrating binary: webcasa → serverdash-server"
+            mv -f "$INSTALL_DIR/webcasa" "$INSTALL_DIR/serverdash-server"
+        else
+            info "Migrating CLI: webcasa → serverdash"
+            mv -f "$INSTALL_DIR/webcasa" "$INSTALL_DIR/serverdash"
+        fi
+    fi
+    if [[ -f "$CONFIG_DIR/webcasa.env" && ! -f "$CONFIG_DIR/serverdash.env" ]]; then
+        mv -f "$CONFIG_DIR/webcasa.env" "$CONFIG_DIR/serverdash.env"
+    fi
+    if [[ -f "$CONFIG_DIR/serverdash.env" ]]; then
+        sed -i 's/WEBCASA_/SERVERDASH_/g; s#/var/lib/webcasa#/var/lib/serverdash#g; s#/var/log/webcasa#/var/log/serverdash#g; s#/etc/webcasa#/etc/serverdash#g; s#webcasa\.db#serverdash.db#g' "$CONFIG_DIR/serverdash.env"
+    fi
+}
+
 do_uninstall() {
-    step "Uninstalling WebCasa"
+    step "Uninstalling ServerDash"
 
     # Stop and disable service
-    if systemctl is-active --quiet webcasa 2>/dev/null; then
-        info "Stopping WebCasa service..."
-        systemctl stop webcasa
+    if systemctl is-active --quiet serverdash 2>/dev/null; then
+        info "Stopping ServerDash service..."
+        systemctl stop serverdash
     fi
-    if systemctl is-enabled --quiet webcasa 2>/dev/null; then
-        systemctl disable webcasa
+    if systemctl is-enabled --quiet serverdash 2>/dev/null; then
+        systemctl disable serverdash
     fi
 
     # Remove files
-    rm -f /etc/systemd/system/webcasa.service
-    rm -f "$INSTALL_DIR/webcasa-server"
-    rm -f "$INSTALL_DIR/webcasa"
+    rm -f /etc/systemd/system/serverdash.service
+    rm -f "$INSTALL_DIR/serverdash-server"
+    rm -f "$INSTALL_DIR/serverdash"
     systemctl daemon-reload
 
     if $PURGE; then
@@ -272,12 +311,12 @@ do_uninstall() {
         fi
         userdel -r "$SERVICE_USER" 2>/dev/null || true
         groupdel "$SERVICE_USER" 2>/dev/null || true
-        rm -f /etc/sudoers.d/webcasa
-        success "Web.Casa completely removed (including data)"
+        rm -f /etc/sudoers.d/serverdash
+        success "ServerDash completely removed (including data)"
     else
         info "Data preserved at: $DATA_DIR"
         info "Config preserved at: $CONFIG_DIR"
-        success "Web.Casa removed (data kept). Use --purge to remove everything."
+        success "ServerDash removed (data kept). Use --purge to remove everything."
     fi
 
     exit 0
@@ -358,9 +397,9 @@ install_caddy() {
     success "Caddy $(caddy version 2>/dev/null || echo "$CADDY") installed to /usr/local/bin/caddy"
 }
 
-# ==================== Install WebCasa (Download Pre-built) ====================
+# ==================== Install ServerDash (Download Pre-built) ====================
 install_prebuilt() {
-    step "Installing WebCasa v${WEBCASA_VERSION}"
+    step "Installing ServerDash v${SERVERDASH_VERSION}"
 
     # Check GLIBC version (pre-built binary requires >= 2.32)
     local GLIBC_VER="0.0"
@@ -377,20 +416,20 @@ install_prebuilt() {
     local GLIBC_MAJOR="${GLIBC_VER%%.*}"
     local GLIBC_MINOR="${GLIBC_VER##*.}"
     if [[ "$GLIBC_MAJOR" -lt 2 ]] || { [[ "$GLIBC_MAJOR" -eq 2 ]] && [[ "$GLIBC_MINOR" -lt 32 ]]; }; then
-        error "系统 GLIBC 版本为 ${GLIBC_VER}，预编译二进制需要 GLIBC >= 2.32"
-        error "AlmaLinux/CentOS/RHEL 8 等旧发行版不支持预编译安装"
-        error "请升级到 RHEL 9 系列或 Ubuntu 22.04+，或使用源码编译："
+        error "System GLIBC version is ${GLIBC_VER}; the prebuilt binary requires GLIBC >= 2.32"
+        error "Older distributions such as AlmaLinux/CentOS/RHEL 8 are not supported by the prebuilt installer"
+        error "Please upgrade to a RHEL 9 family distro or Ubuntu 22.04+, or build from source:"
         error "  bash install.sh --from-source"
         exit 1
     fi
 
     # Determine download URL
-    local TARBALL="webcasa-${ARCH_SUFFIX}.tar.gz"
-    local URL="https://github.com/${GITHUB_REPO}/releases/download/v${WEBCASA_VERSION}/${TARBALL}"
+    local TARBALL="serverdash-${ARCH_SUFFIX}.tar.gz"
+    local URL="https://github.com/${GITHUB_REPO}/releases/download/v${SERVERDASH_VERSION}/${TARBALL}"
 
     info "Downloading from ${URL} ..."
     wget -q --show-progress -O "/tmp/${TARBALL}" "$URL" || {
-        error "Download failed. The release v${WEBCASA_VERSION} may not exist."
+        error "Download failed. The release v${SERVERDASH_VERSION} may not exist."
         error "Try: bash install.sh --from-source"
         exit 1
     }
@@ -406,11 +445,11 @@ install_prebuilt() {
     info "Extracting..."
     tar -xzf "/tmp/${TARBALL}" -C /tmp/
 
-    local EXTRACT_DIR="/tmp/webcasa-${ARCH_SUFFIX}"
+    local EXTRACT_DIR="/tmp/serverdash-${ARCH_SUFFIX}"
 
-    # Install server binary (renamed from webcasa to webcasa-server)
-    cp -f "${EXTRACT_DIR}/webcasa" "$INSTALL_DIR/webcasa-server"
-    chmod 755 "$INSTALL_DIR/webcasa-server"
+    # Install server binary (renamed from serverdash to serverdash-server)
+    cp -f "${EXTRACT_DIR}/serverdash" "$INSTALL_DIR/serverdash-server"
+    chmod 755 "$INSTALL_DIR/serverdash-server"
 
     # Install frontend
     mkdir -p "$DATA_DIR/web"
@@ -419,12 +458,12 @@ install_prebuilt() {
     # Cleanup
     rm -rf "/tmp/${TARBALL}" "/tmp/${TARBALL}.sha256" "$EXTRACT_DIR"
 
-    success "WebCasa v${WEBCASA_VERSION} installed"
+    success "ServerDash v${SERVERDASH_VERSION} installed"
 }
 
-# ==================== Install WebCasa (Build from Source) ====================
+# ==================== Install ServerDash (Build from Source) ====================
 install_from_source() {
-    step "Building WebCasa from source"
+    step "Building ServerDash from source"
 
     # Install Go
     install_go
@@ -452,8 +491,8 @@ install_from_source() {
     elif [[ -f "$SCRIPT_DIR/../main.go" ]]; then
         SRC_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
     else
-        info "Cloning WebCasa source..."
-        SRC_DIR="/tmp/webcasa-build"
+        info "Cloning ServerDash source..."
+        SRC_DIR="/tmp/serverdash-build"
         rm -rf "$SRC_DIR"
         git clone --depth 1 https://github.com/${GITHUB_REPO}.git "$SRC_DIR"
     fi
@@ -472,18 +511,18 @@ install_from_source() {
     cd "$SRC_DIR"
     export PATH=$PATH:/usr/local/go/bin
     export CGO_ENABLED=1
-    go build -ldflags="-s -w -X main.Version=${WEBCASA_VERSION}" -o webcasa .
+    go build -ldflags="-s -w -X main.Version=${SERVERDASH_VERSION}" -o serverdash .
     success "Backend built"
 
-    # Install server binary (renamed from webcasa to webcasa-server)
-    cp -f webcasa "$INSTALL_DIR/webcasa-server"
-    chmod 755 "$INSTALL_DIR/webcasa-server"
+    # Install server binary (renamed from serverdash to serverdash-server)
+    cp -f serverdash "$INSTALL_DIR/serverdash-server"
+    chmod 755 "$INSTALL_DIR/serverdash-server"
 
     # Install frontend
     mkdir -p "$DATA_DIR/web/dist"
     cp -r web/dist/* "$DATA_DIR/web/dist/"
 
-    success "WebCasa v${WEBCASA_VERSION} installed"
+    success "ServerDash v${SERVERDASH_VERSION} installed"
 }
 
 install_cli_script() {
@@ -491,39 +530,39 @@ install_cli_script() {
 
     local CLI_SRC=""
 
-    # Check if scripts/webcasa-cli.sh exists locally (build from source / local install)
-    if [[ -n "${SRC_DIR:-}" && -f "${SRC_DIR}/scripts/webcasa-cli.sh" ]]; then
-        CLI_SRC="${SRC_DIR}/scripts/webcasa-cli.sh"
-    elif [[ -f "${SCRIPT_SELF_DIR}/scripts/webcasa-cli.sh" ]]; then
-        CLI_SRC="${SCRIPT_SELF_DIR}/scripts/webcasa-cli.sh"
+    # Check if scripts/serverdash-cli.sh exists locally (build from source / local install)
+    if [[ -n "${SRC_DIR:-}" && -f "${SRC_DIR}/scripts/serverdash-cli.sh" ]]; then
+        CLI_SRC="${SRC_DIR}/scripts/serverdash-cli.sh"
+    elif [[ -f "${SCRIPT_SELF_DIR}/scripts/serverdash-cli.sh" ]]; then
+        CLI_SRC="${SCRIPT_SELF_DIR}/scripts/serverdash-cli.sh"
     fi
 
     if [[ -n "$CLI_SRC" ]]; then
-        cp -f "$CLI_SRC" "$INSTALL_DIR/webcasa"
+        cp -f "$CLI_SRC" "$INSTALL_DIR/serverdash"
     else
         # Download from GitHub
         info "Downloading CLI script..."
-        curl -fsSL "https://raw.githubusercontent.com/${GITHUB_REPO}/v${WEBCASA_VERSION}/scripts/webcasa-cli.sh" \
-            -o "$INSTALL_DIR/webcasa" || {
+        curl -fsSL "https://raw.githubusercontent.com/${GITHUB_REPO}/v${SERVERDASH_VERSION}/scripts/serverdash-cli.sh" \
+            -o "$INSTALL_DIR/serverdash" || {
             # Fallback to main branch
-            curl -fsSL "https://raw.githubusercontent.com/${GITHUB_REPO}/main/scripts/webcasa-cli.sh" \
-                -o "$INSTALL_DIR/webcasa" || {
+            curl -fsSL "https://raw.githubusercontent.com/${GITHUB_REPO}/main/scripts/serverdash-cli.sh" \
+                -o "$INSTALL_DIR/serverdash" || {
                 warn "Failed to download CLI script, creating minimal wrapper"
-                cat > "$INSTALL_DIR/webcasa" <<'MINEOF'
+                cat > "$INSTALL_DIR/serverdash" <<'MINEOF'
 #!/usr/bin/env bash
-echo "Web.Casa CLI (minimal). Reinstall for full functionality."
-echo "Usage: webcasa-server --version"
-exec /usr/local/bin/webcasa-server "$@"
+echo "ServerDash CLI (minimal). Reinstall for full functionality."
+echo "Usage: serverdash-server --version"
+exec /usr/local/bin/serverdash-server "$@"
 MINEOF
             }
         }
     fi
 
-    chmod 755 "$INSTALL_DIR/webcasa"
+    chmod 755 "$INSTALL_DIR/serverdash"
     # Embed actual version into the CLI script
-    sed -i "s/^VERSION=.*/VERSION=\"${WEBCASA_VERSION}\"/" "$INSTALL_DIR/webcasa"
+    sed -i "s/^VERSION=.*/VERSION=\"${SERVERDASH_VERSION}\"/" "$INSTALL_DIR/serverdash"
 
-    success "CLI tool installed: ${INSTALL_DIR}/webcasa"
+    success "CLI tool installed: ${INSTALL_DIR}/serverdash"
 }
 
 install_go() {
@@ -620,9 +659,9 @@ setup_user() {
 }
 
 setup_config() {
-    step "Configuring WebCasa"
+    step "Configuring ServerDash"
 
-    ENV_FILE="$CONFIG_DIR/webcasa.env"
+    ENV_FILE="$CONFIG_DIR/serverdash.env"
 
     if [[ -f "$ENV_FILE" ]]; then
         info "Config file already exists, preserving: $ENV_FILE"
@@ -641,18 +680,18 @@ setup_config() {
         CADDY_BIN=$(command -v caddy 2>/dev/null || echo "/usr/local/bin/caddy")
 
         cat > "$ENV_FILE" <<ENVEOF
-# Web.Casa Configuration
+# ServerDash Configuration
 # Generated on $(date -Iseconds)
-# https://web.casa
+# https://github.com/nguyenviet02/server-management-dashboard
 
-WEBCASA_PORT=${PANEL_PORT}
-WEBCASA_DATA_DIR=${DATA_DIR}
-WEBCASA_DB_PATH=${DATA_DIR}/webcasa.db
-WEBCASA_JWT_SECRET=${JWT_SECRET}
-WEBCASA_CADDY_BIN=${CADDY_BIN}
-WEBCASA_CADDYFILE_PATH=${DATA_DIR}/Caddyfile
-WEBCASA_LOG_DIR=${LOG_DIR}
-WEBCASA_ADMIN_API=http://localhost:2019
+SERVERDASH_PORT=${PANEL_PORT}
+SERVERDASH_DATA_DIR=${DATA_DIR}
+SERVERDASH_DB_PATH=${DATA_DIR}/serverdash.db
+SERVERDASH_JWT_SECRET=${JWT_SECRET}
+SERVERDASH_CADDY_BIN=${CADDY_BIN}
+SERVERDASH_CADDYFILE_PATH=${DATA_DIR}/Caddyfile
+SERVERDASH_LOG_DIR=${LOG_DIR}
+SERVERDASH_ADMIN_API=http://localhost:2019
 GIN_MODE=release
 ENVEOF
 
@@ -666,7 +705,7 @@ ENVEOF
     if [[ ! -f "$CADDYFILE" ]]; then
         cat > "$CADDYFILE" <<CFEOF
 # ============================================
-# Auto-generated by Web.Casa (https://web.casa)
+# Auto-generated by ServerDash (https://github.com/nguyenviet02/server-management-dashboard)
 # DO NOT EDIT MANUALLY — changes will be overwritten
 # ============================================
 
@@ -689,9 +728,9 @@ CFEOF
 setup_systemd() {
     step "Setting up systemd service"
 
-    cat > /etc/systemd/system/webcasa.service <<SVCEOF
+    cat > /etc/systemd/system/serverdash.service <<SVCEOF
 [Unit]
-Description=Web.Casa — Server Management Panel (https://web.casa)
+Description=ServerDash — Server Management Panel (https://github.com/nguyenviet02/server-management-dashboard)
 Documentation=https://github.com/${GITHUB_REPO}
 After=network-online.target
 Wants=network-online.target
@@ -700,14 +739,14 @@ Wants=network-online.target
 Type=simple
 User=root
 Group=root
-ExecStart=${INSTALL_DIR}/webcasa-server
+ExecStart=${INSTALL_DIR}/serverdash-server
 WorkingDirectory=${DATA_DIR}
 Restart=on-failure
 RestartSec=5
 LimitNOFILE=65536
 
 # Environment
-EnvironmentFile=-${CONFIG_DIR}/webcasa.env
+EnvironmentFile=-${CONFIG_DIR}/serverdash.env
 
 # Security
 NoNewPrivileges=false
@@ -719,14 +758,14 @@ AmbientCapabilities=CAP_NET_BIND_SERVICE
 # Logging
 StandardOutput=journal
 StandardError=journal
-SyslogIdentifier=webcasa
+SyslogIdentifier=serverdash
 
 [Install]
 WantedBy=multi-user.target
 SVCEOF
 
     systemctl daemon-reload
-    systemctl enable webcasa
+    systemctl enable serverdash
 
     success "Systemd service installed and enabled"
 }
@@ -735,7 +774,7 @@ setup_firewall() {
     step "Configuring firewall"
 
     if command -v ufw &>/dev/null; then
-        ufw allow "$PANEL_PORT"/tcp comment "WebCasa" > /dev/null 2>&1 || true
+        ufw allow "$PANEL_PORT"/tcp comment "ServerDash" > /dev/null 2>&1 || true
         ufw allow 80/tcp comment "HTTP" > /dev/null 2>&1 || true
         ufw allow 443/tcp comment "HTTPS" > /dev/null 2>&1 || true
         success "UFW rules added (ports $PANEL_PORT, 80, 443)"
@@ -770,7 +809,7 @@ prompt_port() {
 
     echo ""
     echo -e "${BOLD}Panel Port Configuration${NC}"
-    echo -e "   Web.Casa will listen on this port for the management UI."
+    echo -e "   ServerDash will listen on this port for the management UI."
     echo -e "   Default: ${GREEN}${PANEL_PORT}${NC}"
     echo ""
 
@@ -790,16 +829,16 @@ prompt_port() {
 }
 # ==================== Start Service ====================
 start_service() {
-    step "Starting WebCasa"
+    step "Starting ServerDash"
 
-    systemctl start webcasa
+    systemctl start serverdash
     sleep 2
 
-    if systemctl is-active --quiet webcasa; then
-        success "WebCasa is running!"
+    if systemctl is-active --quiet serverdash; then
+        success "ServerDash is running!"
     else
-        error "WebCasa failed to start. Check logs with:"
-        echo "  journalctl -u webcasa -n 50 --no-pager"
+        error "ServerDash failed to start. Check logs with:"
+        echo "  journalctl -u serverdash -n 50 --no-pager"
         exit 1
     fi
 }
@@ -831,9 +870,9 @@ detect_public_ip() {
     fi
 
     # Write to SQLite settings table
-    local DB_PATH="${DATA_DIR}/webcasa.db"
+    local DB_PATH="${DATA_DIR}/serverdash.db"
 
-    # Wait for WebCasa to create the database (up to 10 seconds)
+    # Wait for ServerDash to create the database (up to 10 seconds)
     local WAIT_COUNT=0
     while [[ ! -f "$DB_PATH" ]] && [[ $WAIT_COUNT -lt 10 ]]; do
         sleep 1
@@ -850,7 +889,7 @@ detect_public_ip() {
             sqlite3 "$DB_PATH" "INSERT OR REPLACE INTO settings (key, value) VALUES ('server_ipv6', '$PUBLIC_IPV6');" 2>/dev/null || true
         fi
     else
-        warn "无法写入 IP 到数据库（sqlite3 不可用或数据库未创建）"
+        warn "Could not write IP addresses to the database (sqlite3 unavailable or database not created yet)"
     fi
 
     if [[ -n "$PUBLIC_IPV4" ]]; then
@@ -872,7 +911,7 @@ print_summary() {
 
     echo ""
     echo -e "${GREEN}${BOLD}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}${BOLD}║           Web.Casa Installation Complete!                ║${NC}"
+    echo -e "${GREEN}${BOLD}║           ServerDash Installation Complete!                ║${NC}"
     echo -e "${GREEN}${BOLD}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
     echo -e "  ${BOLD}Panel URL:${NC}      http://${DISPLAY_IP}:${PANEL_PORT}"
@@ -884,18 +923,18 @@ print_summary() {
         echo -e "  ${BOLD}IPv6:${NC}           ${PUBLIC_IPV6}"
     fi
     echo ""
-    echo -e "  ${BOLD}Config:${NC}         ${CONFIG_DIR}/webcasa.env"
+    echo -e "  ${BOLD}Config:${NC}         ${CONFIG_DIR}/serverdash.env"
     echo -e "  ${BOLD}Data:${NC}           ${DATA_DIR}/"
     echo -e "  ${BOLD}Logs:${NC}           ${LOG_DIR}/"
-    echo -e "  ${BOLD}Binary:${NC}         ${INSTALL_DIR}/webcasa-server"
-    echo -e "  ${BOLD}CLI:${NC}            ${INSTALL_DIR}/webcasa"
+    echo -e "  ${BOLD}Binary:${NC}         ${INSTALL_DIR}/serverdash-server"
+    echo -e "  ${BOLD}CLI:${NC}            ${INSTALL_DIR}/serverdash"
     echo ""
     echo -e "  ${BOLD}Management Commands:${NC}"
-    echo -e "    webcasa                     ${CYAN}# Interactive menu${NC}"
-    echo -e "    webcasa panel restart       ${CYAN}# Restart panel${NC}"
-    echo -e "    webcasa caddy restart       ${CYAN}# Restart Caddy${NC}"
-    echo -e "    webcasa info                ${CYAN}# System info${NC}"
-    echo -e "    webcasa help                ${CYAN}# All commands${NC}"
+    echo -e "    serverdash                     ${CYAN}# Interactive menu${NC}"
+    echo -e "    serverdash panel restart       ${CYAN}# Restart panel${NC}"
+    echo -e "    serverdash caddy restart       ${CYAN}# Restart Caddy${NC}"
+    echo -e "    serverdash info                ${CYAN}# System info${NC}"
+    echo -e "    serverdash help                ${CYAN}# All commands${NC}"
     echo ""
     echo -e "  ${BOLD}Included Features:${NC}"
     echo -e "    Reverse Proxy  │  File Manager  │  Web Terminal"
@@ -912,24 +951,20 @@ print_summary() {
 do_upgrade() {
     local BUILD_MODE="$1" # "prebuilt" or "source"
 
-    # Verify WebCasa is installed — migrate from old binary name if needed
-    if [[ ! -f "$INSTALL_DIR/webcasa-server" ]]; then
-        if [[ -f "$INSTALL_DIR/webcasa" ]] && file "$INSTALL_DIR/webcasa" 2>/dev/null | grep -q "ELF"; then
-            info "Migrating old binary name: webcasa → webcasa-server"
-            mv -f "$INSTALL_DIR/webcasa" "$INSTALL_DIR/webcasa-server"
-        else
-            fatal "WebCasa is not installed. Run install.sh without --upgrade first."
-        fi
+    migrate_legacy_install
+
+    if [[ ! -f "$INSTALL_DIR/serverdash-server" ]]; then
+        fatal "ServerDash is not installed. Run install.sh without --upgrade first."
     fi
 
     # Show current version
     local CURRENT_VERSION
-    CURRENT_VERSION=$("$INSTALL_DIR/webcasa-server" --version 2>/dev/null || echo "unknown")
+    CURRENT_VERSION=$("$INSTALL_DIR/serverdash-server" --version 2>/dev/null || echo "unknown")
     info "Current version: ${CURRENT_VERSION}"
-    info "Target version:  ${WEBCASA_VERSION}"
+    info "Target version:  ${SERVERDASH_VERSION}"
 
-    if [[ "$CURRENT_VERSION" == "$WEBCASA_VERSION" ]]; then
-        warn "Already running v${WEBCASA_VERSION}."
+    if [[ "$CURRENT_VERSION" == "$SERVERDASH_VERSION" ]]; then
+        warn "Already running v${SERVERDASH_VERSION}."
         if ! $NON_INTERACTIVE; then
             read -p "   Continue anyway? [y/N]: " CONFIRM || true
             [[ "$CONFIRM" =~ ^[yY] ]] || { info "Upgrade cancelled."; exit 0; }
@@ -937,18 +972,18 @@ do_upgrade() {
     fi
 
     # Stop service
-    step "Stopping WebCasa service"
-    if systemctl is-active --quiet webcasa 2>/dev/null; then
-        systemctl stop webcasa
+    step "Stopping ServerDash service"
+    if systemctl is-active --quiet serverdash 2>/dev/null; then
+        systemctl stop serverdash
         success "Service stopped"
     else
         info "Service is not running"
     fi
 
     # Backup current binary
-    if [[ -f "$INSTALL_DIR/webcasa-server" ]]; then
-        cp -f "$INSTALL_DIR/webcasa-server" "$INSTALL_DIR/webcasa-server.bak"
-        info "Backed up current binary to webcasa-server.bak"
+    if [[ -f "$INSTALL_DIR/serverdash-server" ]]; then
+        cp -f "$INSTALL_DIR/serverdash-server" "$INSTALL_DIR/serverdash-server.bak"
+        info "Backed up current binary to serverdash-server.bak"
     fi
 
     # Build or download new version.
@@ -968,16 +1003,16 @@ do_upgrade() {
 
     if [[ "$INSTALL_OK" != "true" ]]; then
         error "Install step failed during upgrade!"
-        if [[ -f "$INSTALL_DIR/webcasa-server.bak" ]]; then
+        if [[ -f "$INSTALL_DIR/serverdash-server.bak" ]]; then
             warn "Rolling back to previous binary..."
-            mv -f "$INSTALL_DIR/webcasa-server.bak" "$INSTALL_DIR/webcasa-server"
+            mv -f "$INSTALL_DIR/serverdash-server.bak" "$INSTALL_DIR/serverdash-server"
         fi
         warn "Restarting previous version..."
-        systemctl start webcasa || true
-        if systemctl is-active --quiet webcasa; then
+        systemctl start serverdash || true
+        if systemctl is-active --quiet serverdash; then
             success "Rollback successful. Previous version restored."
         else
-            error "Rollback failed. Check logs: journalctl -u webcasa -n 50 --no-pager"
+            error "Rollback failed. Check logs: journalctl -u serverdash -n 50 --no-pager"
         fi
         exit 1
     fi
@@ -993,25 +1028,25 @@ do_upgrade() {
     setup_systemd
 
     # Restart service
-    step "Starting WebCasa service"
-    systemctl start webcasa
+    step "Starting ServerDash service"
+    systemctl start serverdash
     sleep 2
 
-    if systemctl is-active --quiet webcasa; then
+    if systemctl is-active --quiet serverdash; then
         # Remove backup on success
-        rm -f "$INSTALL_DIR/webcasa-server.bak"
-        success "WebCasa upgraded to v${WEBCASA_VERSION}!"
+        rm -f "$INSTALL_DIR/serverdash-server.bak"
+        success "ServerDash upgraded to v${SERVERDASH_VERSION}!"
     else
         # Rollback on failure
-        error "WebCasa failed to start after upgrade!"
-        if [[ -f "$INSTALL_DIR/webcasa-server.bak" ]]; then
+        error "ServerDash failed to start after upgrade!"
+        if [[ -f "$INSTALL_DIR/serverdash-server.bak" ]]; then
             warn "Rolling back to previous version..."
-            mv -f "$INSTALL_DIR/webcasa-server.bak" "$INSTALL_DIR/webcasa-server"
-            systemctl start webcasa
-            if systemctl is-active --quiet webcasa; then
+            mv -f "$INSTALL_DIR/serverdash-server.bak" "$INSTALL_DIR/serverdash-server"
+            systemctl start serverdash
+            if systemctl is-active --quiet serverdash; then
                 success "Rollback successful. Previous version restored."
             else
-                fatal "Rollback failed. Check logs: journalctl -u webcasa -n 50 --no-pager"
+                fatal "Rollback failed. Check logs: journalctl -u serverdash -n 50 --no-pager"
             fi
         fi
         exit 1
@@ -1019,13 +1054,13 @@ do_upgrade() {
 
     echo ""
     echo -e "${GREEN}${BOLD}╔══════════════════════════════════════════════════════════════╗${NC}"
-    echo -e "${GREEN}${BOLD}║            Web.Casa Upgrade Complete!                    ║${NC}"
+    echo -e "${GREEN}${BOLD}║            ServerDash Upgrade Complete!                    ║${NC}"
     echo -e "${GREEN}${BOLD}╚══════════════════════════════════════════════════════════════╝${NC}"
     echo ""
-    echo -e "  ${BOLD}Version:${NC}  ${CURRENT_VERSION} → ${WEBCASA_VERSION}"
-    echo -e "  ${BOLD}Binary:${NC}   ${INSTALL_DIR}/webcasa-server"
-    echo -e "  ${BOLD}CLI:${NC}      ${INSTALL_DIR}/webcasa"
-    echo -e "  ${BOLD}Status:${NC}   $(systemctl is-active webcasa)"
+    echo -e "  ${BOLD}Version:${NC}  ${CURRENT_VERSION} → ${SERVERDASH_VERSION}"
+    echo -e "  ${BOLD}Binary:${NC}   ${INSTALL_DIR}/serverdash-server"
+    echo -e "  ${BOLD}CLI:${NC}      ${INSTALL_DIR}/serverdash"
+    echo -e "  ${BOLD}Status:${NC}   $(systemctl is-active serverdash)"
     echo ""
 
     exit 0
@@ -1041,13 +1076,15 @@ main() {
     echo '    \_/\_/ \___|_.__/  \____\__,_|___/\__,_|'
     echo '                                             '
     echo -e "${NC}"
-    echo -e "  ${BOLD}One-Click Installer v${WEBCASA_VERSION}${NC}"
-    echo -e "  ${CYAN}https://web.casa${NC}"
+    echo -e "  ${BOLD}One-Click Installer v${SERVERDASH_VERSION}${NC}"
+    echo -e "  ${CYAN}https://github.com/nguyenviet02/server-management-dashboard${NC}"
     echo ""
 
     parse_args "$@"
     check_root
     detect_os
+
+    migrate_legacy_install
 
     # Pro edition: enforce RHEL-based OS 9/10
     if $PRO_MODE; then
@@ -1078,7 +1115,7 @@ main() {
     install_caddy
     setup_user
 
-    # Install WebCasa binary + frontend
+    # Install ServerDash binary + frontend
     if $FROM_SOURCE; then
         info "Building from source (--from-source)"
         install_from_source

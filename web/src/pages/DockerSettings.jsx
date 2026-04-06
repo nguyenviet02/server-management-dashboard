@@ -6,8 +6,8 @@ import { dockerAPI } from '../api/index.js'
 
 const MIRROR_PRESETS = [
     { label: 'DaoCloud', url: 'https://docker.m.daocloud.io' },
-    { label: '腾讯云', url: 'https://mirror.ccs.tencentyun.com' },
-    { label: '中科大', url: 'https://docker.mirrors.ustc.edu.cn' },
+    { label: 'Tencent Cloud', url: 'https://mirror.ccs.tencentyun.com' },
+    { label: 'USTC', url: 'https://docker.mirrors.ustc.edu.cn' },
 ]
 
 const LOG_DRIVERS = ['json-file', 'syslog', 'journald', 'local', 'none']

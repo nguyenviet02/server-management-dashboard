@@ -86,7 +86,7 @@
     "sign_out": "Đăng xuất"
   },
   "login": {
-    "title": "Đăng nhập vào WebCasa",
+    "title": "Đăng nhập vào ServerDash",
     "subtitle": "Bảng quản lý Caddy nhẹ gọn",
     "username": "Tên người dùng",
     "password": "Mật khẩu",
@@ -99,9 +99,9 @@
     "captcha_hint": "Kéo thanh trượt để hoàn tất xác minh",
     "verify_first": "Vui lòng hoàn tất xác minh bảo mật trước",
     "setup_title": "Tạo tài khoản quản trị",
-    "setup_hint": "Đây là lần đầu bạn sử dụng WebCasa. Vui lòng tạo một tài khoản quản trị.",
+    "setup_hint": "Đây là lần đầu bạn sử dụng ServerDash. Vui lòng tạo một tài khoản quản trị.",
     "create_account": "Tạo tài khoản",
-    "footer": "Được cung cấp bởi Web.Casa",
+    "footer": "Được cung cấp bởi ServerDash",
     "pow": {
       "idle": "Nhấn để xác minh",
       "solving": "Đang xác minh... {{progress}}%",
@@ -1050,8 +1050,8 @@
     "title": "Plugin",
     "installed": "đã cài",
     "description": "Quản lý các plugin đã cài đặt. Bật hoặc tắt plugin để mở rộng chức năng bảng điều khiển. Các thay đổi có hiệu lực sau khi khởi động lại.",
-    "page_description": "Cài đặt, gỡ cài đặt và quản lý plugin để mở rộng chức năng của Web.Casa.",
-    "empty": "Chưa có plugin nào được cài đặt. Plugin giúp mở rộng Web.Casa với quản lý Docker, triển khai dự án, trợ lý AI và nhiều hơn nữa.",
+    "page_description": "Cài đặt, gỡ cài đặt và quản lý plugin để mở rộng chức năng của ServerDash.",
+    "empty": "Chưa có plugin nào được cài đặt. Plugin giúp mở rộng ServerDash với quản lý Docker, triển khai dự án, trợ lý AI và nhiều hơn nữa.",
     "depends_on": "Phụ thuộc vào",
     "enable_success": "Đã bật plugin",
     "disable_success": "Đã tắt plugin",

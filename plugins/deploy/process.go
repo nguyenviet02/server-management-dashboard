@@ -10,7 +10,7 @@ import (
 )
 
 const serviceTemplate = `[Unit]
-Description=Web.Casa Project: {{.Name}}
+Description=ServerDash Project: {{.Name}}
 After=network.target
 
 [Service]
@@ -45,7 +45,7 @@ func NewProcessManager(logDir string) *ProcessManager {
 
 // ServiceName returns the systemd service name for a project.
 func ServiceName(projectID uint) string {
-	return fmt.Sprintf("webcasa-project-%d", projectID)
+	return fmt.Sprintf("serverdash-project-%d", projectID)
 }
 
 // Install creates and enables a systemd service for the project.
@@ -227,7 +227,7 @@ func systemctl(args ...string) error {
 func ExtraProcessServiceName(projectID uint, procName string, instance int) string {
 	// Sanitize name: lowercase, replace spaces with dashes
 	safe := strings.ToLower(strings.ReplaceAll(procName, " ", "-"))
-	return fmt.Sprintf("webcasa-project-%d-%s-%d", projectID, safe, instance)
+	return fmt.Sprintf("serverdash-project-%d-%s-%d", projectID, safe, instance)
 }
 
 // InstallExtraProcess creates and enables systemd services for an extra process (one per instance).

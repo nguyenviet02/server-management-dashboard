@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/web-casa/webcasa/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
 	"github.com/leanovate/gopter"
 	"github.com/leanovate/gopter/gen"
 	"github.com/leanovate/gopter/prop"
@@ -40,7 +40,7 @@ func genIPv6List() gopter.Gen {
 	})
 }
 
-// Feature: phase6-enhancements, Property 3: DNS 状态判定正确性 — For any domain's A/AAAA record set
+// Feature: phase6-enhancements, Property 3: DNS status determination is correct — For any domain's A/AAAA record set
 // and server IP config, DNS check should return correct status: "matched" when A records contain
 // server_ipv4 or AAAA contain server_ipv6; "mismatched" when records exist but don't match;
 // "records_only" when both server IPs are empty.

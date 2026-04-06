@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/gin-gonic/gin"
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // Plugin implements the plugin.Plugin interface for Docker management.
@@ -35,7 +35,7 @@ func (p *Plugin) Metadata() pluginpkg.Metadata {
 		Name:        "Docker",
 		Version:     "1.0.0",
 		Description: "Docker & Docker Compose management with simple and advanced modes",
-		Author:      "Web.Casa",
+		Author:      "ServerDash",
 		Priority:    10,
 		Icon:        "Container",
 		Category:    "deploy",
@@ -428,12 +428,12 @@ func (p *Plugin) FrontendManifest() pluginpkg.FrontendManifest {
 	return pluginpkg.FrontendManifest{
 		ID: "docker",
 		Routes: []pluginpkg.FrontendRoute{
-			{Path: "/docker", Component: "DockerOverview", Menu: true, Icon: "Container", Label: "Docker", LabelZh: "Docker 管理"},
-			{Path: "/docker/containers", Component: "DockerContainers", Label: "Containers", LabelZh: "容器管理"},
-			{Path: "/docker/images", Component: "DockerImages", Label: "Images", LabelZh: "镜像管理"},
-			{Path: "/docker/networks", Component: "DockerNetworks", Label: "Networks", LabelZh: "网络管理"},
-			{Path: "/docker/volumes", Component: "DockerVolumes", Label: "Volumes", LabelZh: "存储卷"},
-			{Path: "/docker/settings", Component: "DockerSettings", Label: "Settings", LabelZh: "设置"},
+			{Path: "/docker", Component: "DockerOverview", Menu: true, Icon: "Container", Label: "Docker"},
+			{Path: "/docker/containers", Component: "DockerContainers", Label: "Containers"},
+			{Path: "/docker/images", Component: "DockerImages", Label: "Images"},
+			{Path: "/docker/networks", Component: "DockerNetworks", Label: "Networks"},
+			{Path: "/docker/volumes", Component: "DockerVolumes", Label: "Volumes"},
+			{Path: "/docker/settings", Component: "DockerSettings", Label: "Settings"},
 		},
 		MenuGroup: "deploy",
 		MenuOrder: 10,

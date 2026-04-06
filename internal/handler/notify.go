@@ -5,7 +5,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/web-casa/webcasa/internal/notify"
+	"github.com/nguyenviet02/server-management-dashboard/internal/notify"
 )
 
 // NotifyHandler provides HTTP handlers for notification channels.

@@ -9,7 +9,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
-	"github.com/web-casa/webcasa/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
@@ -96,7 +96,7 @@ func TestGenerateAndParseToken(t *testing.T) {
 	}{
 		{"basic user", 1, "admin"},
 		{"large ID", 99999, "somebody"},
-		{"unicode username", 42, "用户名"},
+		{"unicode username", 42, "naïve-user"},
 	}
 
 	for _, tt := range tests {
@@ -122,8 +122,8 @@ func TestGenerateAndParseToken(t *testing.T) {
 			if claims.Pending2FA {
 				t.Error("Pending2FA should be false for normal tokens")
 			}
-			if claims.Issuer != "webcasa" {
-				t.Errorf("Issuer = %q, want %q", claims.Issuer, "webcasa")
+			if claims.Issuer != "serverdash" {
+				t.Errorf("Issuer = %q, want %q", claims.Issuer, "serverdash")
 			}
 		})
 	}
@@ -137,7 +137,7 @@ func TestParseToken_Expired(t *testing.T) {
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(time.Now().Add(-1 * time.Hour)),
 			IssuedAt:  jwt.NewNumericDate(time.Now().Add(-2 * time.Hour)),
-			Issuer:    "webcasa",
+			Issuer:    "serverdash",
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -206,7 +206,7 @@ func TestHashAndCheckPassword(t *testing.T) {
 	passwords := []string{
 		"simple",
 		"P@$$w0rd!2026",
-		"中文密码测试",
+		"unicode-password-test",
 		"a",
 		"very-long-password-that-keeps-going-and-going-and-going-1234567890",
 	}

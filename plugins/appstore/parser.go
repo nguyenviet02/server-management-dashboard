@@ -73,9 +73,8 @@ type ParsedApp struct {
 	Config      *AppConfig
 	ComposeFile string            // raw docker-compose.yml content
 	Description string            // markdown from metadata/description.md
-	DescZh      string            // markdown from metadata/description.zh.md
 	LogoPath    string            // relative path to logo (e.g. "nextcloud/metadata/logo.jpg")
-	I18n        map[string]*AppI18n // lang -> translations (e.g. "zh" -> {...})
+	I18n        map[string]*AppI18n // lang -> translations
 }
 
 // ParseAppDir parses a single app directory containing config.json + docker-compose.yml.
@@ -114,11 +113,6 @@ func ParseAppDir(dirPath string) (*ParsedApp, error) {
 		result.Description = string(data)
 	}
 
-	// Read optional metadata/description.zh.md
-	descZhPath := filepath.Join(dirPath, "metadata", "description.zh.md")
-	if data, err := os.ReadFile(descZhPath); err == nil {
-		result.DescZh = string(data)
-	}
 
 	// Check for logo image
 	for _, ext := range []string{".jpg", ".png", ".svg", ".webp"} {

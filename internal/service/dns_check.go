@@ -3,7 +3,7 @@ package service
 import (
 	"net"
 
-	"github.com/web-casa/webcasa/internal/model"
+	"github.com/nguyenviet02/server-management-dashboard/internal/model"
 	"gorm.io/gorm"
 )
 

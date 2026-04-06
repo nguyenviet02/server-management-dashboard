@@ -1,0 +1,33 @@
+[Unit]
+Description=ServerDash - Caddy Reverse Proxy Management Panel
+Documentation=https://github.com/nguyenviet02/server-management-dashboard
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=serverdash
+Group=serverdash
+ExecStart=/usr/local/bin/serverdash-server
+WorkingDirectory=/var/lib/serverdash
+Restart=on-failure
+RestartSec=5
+LimitNOFILE=65536
+
+# Environment
+EnvironmentFile=-/etc/serverdash/serverdash.env
+
+# Security hardening
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/serverdash /var/log/serverdash
+PrivateTmp=true
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=serverdash
+
+[Install]
+WantedBy=multi-user.target

@@ -1,4 +1,4 @@
-module github.com/web-casa/webcasa
+module github.com/nguyenviet02/server-management-dashboard
 
 go 1.26.0
 

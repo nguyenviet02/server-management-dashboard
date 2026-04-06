@@ -18,7 +18,7 @@ import (
 const maxUploadSize = 100 << 20 // 100 MB
 
 var wsUpgrader = websocket.Upgrader{
-	Subprotocols: []string{"webcasa-auth"},
+	Subprotocols: []string{"serverdash-auth", "webcasa-auth"},
 	CheckOrigin: func(r *http.Request) bool {
 		origin := r.Header.Get("Origin")
 		if origin == "" {

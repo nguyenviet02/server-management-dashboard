@@ -4,7 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
-	"github.com/web-casa/webcasa/internal/versioncheck"
+	"github.com/nguyenviet02/server-management-dashboard/internal/versioncheck"
 )
 
 // VersionHandler serves version-check results.

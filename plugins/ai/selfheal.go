@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 )
 
 // SelfHealEngine listens for monitoring alert events and triggers AI diagnosis

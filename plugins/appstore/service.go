@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/web-casa/webcasa/internal/caddy"
-	pluginpkg "github.com/web-casa/webcasa/internal/plugin"
+	"github.com/nguyenviet02/server-management-dashboard/internal/caddy"
+	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 	"gorm.io/gorm"
 )
 
@@ -48,7 +48,7 @@ type AppListResponse struct {
 }
 
 // ListApps returns available apps with filtering, search, and pagination.
-// lang is the user's language code (e.g. "zh"); when non-empty and not "en",
+// lang is the user's language code; when non-empty and not "en",
 // search also covers the i18n_json field for localized matches.
 func (s *Service) ListApps(category, search, lang string, page, pageSize int) (*AppListResponse, error) {
 	if page < 1 {

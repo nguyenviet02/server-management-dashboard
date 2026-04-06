@@ -20,22 +20,22 @@ func NewDockerRunner() *DockerRunner {
 
 // ImageName returns the Docker image name for a project.
 func (r *DockerRunner) ImageName(projectID uint) string {
-	return fmt.Sprintf("webcasa-project-%d", projectID)
+	return fmt.Sprintf("serverdash-project-%d", projectID)
 }
 
 // ImageTag returns the full image:tag string for a build.
 func (r *DockerRunner) ImageTag(projectID uint, buildNum int) string {
-	return fmt.Sprintf("webcasa-project-%d:%d", projectID, buildNum)
+	return fmt.Sprintf("serverdash-project-%d:%d", projectID, buildNum)
 }
 
 // ContainerName returns the Docker container name for a project.
 func (r *DockerRunner) ContainerName(projectID uint) string {
-	return fmt.Sprintf("webcasa-project-%d", projectID)
+	return fmt.Sprintf("serverdash-project-%d", projectID)
 }
 
 // StagingContainerName returns the staging container name for zero-downtime deployment.
 func (r *DockerRunner) StagingContainerName(projectID uint) string {
-	return fmt.Sprintf("webcasa-project-%d-staging", projectID)
+	return fmt.Sprintf("serverdash-project-%d-staging", projectID)
 }
 
 // BuildImage runs `docker build` in the given directory and streams output to the logWriter.
@@ -229,7 +229,7 @@ func (r *DockerRunner) Logs(containerName string, tail int) (string, error) {
 // ExtraProcessContainerName returns the Docker container name for an extra process instance.
 func (r *DockerRunner) ExtraProcessContainerName(projectID uint, procName string, instance int) string {
 	safe := strings.ToLower(strings.ReplaceAll(procName, " ", "-"))
-	return fmt.Sprintf("webcasa-project-%d-%s-%d", projectID, safe, instance)
+	return fmt.Sprintf("serverdash-project-%d-%s-%d", projectID, safe, instance)
 }
 
 // RunExtraProcess starts containers for an extra process (one per instance).
