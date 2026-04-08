@@ -19,21 +19,11 @@ COPY --from=frontend /app/web/dist ./web/dist
 RUN CGO_ENABLED=1 go build -o serverdash .
 
 # Runtime stage
+FROM caddy:2.11.2-alpine AS caddy
+
 FROM alpine:3.19
 RUN apk add --no-cache ca-certificates curl bash
-
-# Install Caddy
-ARG CADDY_VERSION=2.11.2
-RUN ARCH=$(uname -m | sed 's/x86_64/amd64/' | sed 's/aarch64/arm64/') \
-    && curl -sSL "https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_linux_${ARCH}.tar.gz" -o /tmp/caddy.tar.gz \
-    && curl -sSL "https://github.com/caddyserver/caddy/releases/download/v${CADDY_VERSION}/caddy_${CADDY_VERSION}_checksums.txt" -o /tmp/checksums.txt \
-    && EXPECTED=$(grep " caddy_${CADDY_VERSION}_linux_${ARCH}.tar.gz$" /tmp/checksums.txt | awk '{print $1}') \
-    && ACTUAL=$(sha256sum /tmp/caddy.tar.gz | awk '{print $1}') \
-    && test -n "$EXPECTED" \
-    && test "$ACTUAL" = "$EXPECTED" \
-    && tar -xzf /tmp/caddy.tar.gz -C /tmp caddy \
-    && install -m 0755 /tmp/caddy /usr/local/bin/caddy \
-    && rm -f /tmp/caddy /tmp/caddy.tar.gz /tmp/checksums.txt
+COPY --from=caddy /usr/bin/caddy /usr/local/bin/caddy
 
 WORKDIR /app
 COPY --from=backend /app/serverdash .
