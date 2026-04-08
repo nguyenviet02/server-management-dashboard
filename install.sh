@@ -244,44 +244,6 @@ EOF
 
 # ==================== Uninstall ====================
 
-
-migrate_legacy_install() {
-    if [[ -d /var/lib/webcasa && ! -d "$DATA_DIR" ]]; then
-        info "Migrating data directory: /var/lib/webcasa → $DATA_DIR"
-        mv /var/lib/webcasa "$DATA_DIR"
-    fi
-    if [[ -d /var/log/webcasa && ! -d "$LOG_DIR" ]]; then
-        info "Migrating log directory: /var/log/webcasa → $LOG_DIR"
-        mv /var/log/webcasa "$LOG_DIR"
-    fi
-    if [[ -d /etc/webcasa && ! -d "$CONFIG_DIR" ]]; then
-        info "Migrating config directory: /etc/webcasa → $CONFIG_DIR"
-        mv /etc/webcasa "$CONFIG_DIR"
-    fi
-    if [[ -f /etc/systemd/system/webcasa.service && ! -f /etc/systemd/system/serverdash.service ]]; then
-        rm -f /etc/systemd/system/webcasa.service
-    fi
-    if [[ -f "$INSTALL_DIR/webcasa-server" && ! -f "$INSTALL_DIR/serverdash-server" ]]; then
-        info "Migrating binary: webcasa-server → serverdash-server"
-        mv -f "$INSTALL_DIR/webcasa-server" "$INSTALL_DIR/serverdash-server"
-    fi
-    if [[ -f "$INSTALL_DIR/webcasa" && ! -f "$INSTALL_DIR/serverdash" ]]; then
-        if file "$INSTALL_DIR/webcasa" 2>/dev/null | grep -q "ELF"; then
-            info "Migrating binary: webcasa → serverdash-server"
-            mv -f "$INSTALL_DIR/webcasa" "$INSTALL_DIR/serverdash-server"
-        else
-            info "Migrating CLI: webcasa → serverdash"
-            mv -f "$INSTALL_DIR/webcasa" "$INSTALL_DIR/serverdash"
-        fi
-    fi
-    if [[ -f "$CONFIG_DIR/webcasa.env" && ! -f "$CONFIG_DIR/serverdash.env" ]]; then
-        mv -f "$CONFIG_DIR/webcasa.env" "$CONFIG_DIR/serverdash.env"
-    fi
-    if [[ -f "$CONFIG_DIR/serverdash.env" ]]; then
-        sed -i 's/WEBCASA_/SERVERDASH_/g; s#/var/lib/webcasa#/var/lib/serverdash#g; s#/var/log/webcasa#/var/log/serverdash#g; s#/etc/webcasa#/etc/serverdash#g; s#webcasa\.db#serverdash.db#g' "$CONFIG_DIR/serverdash.env"
-    fi
-}
-
 do_uninstall() {
     step "Uninstalling ServerDash"
 

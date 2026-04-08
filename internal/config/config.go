@@ -23,20 +23,20 @@ type Config struct {
 
 // Load reads configuration from environment variables with sensible defaults
 func Load() *Config {
-	dataDir := envOrLegacyDefault("SERVERDASH_DATA_DIR", "WEBCASA_DATA_DIR", "./data")
+	dataDir := envOrDefault("SERVERDASH_DATA_DIR", "./data")
 
 	// Ensure directories exist early so we can write the secret file
 	os.MkdirAll(dataDir, 0755)
 
 	cfg := &Config{
-		Port:          envOrLegacyDefault("SERVERDASH_PORT", "WEBCASA_PORT", "39921"),
-		DBPath:        envOrLegacyDefault("SERVERDASH_DB_PATH", "WEBCASA_DB_PATH", filepath.Join(dataDir, "serverdash.db")),
+		Port:          envOrDefault("SERVERDASH_PORT", "39921"),
+		DBPath:        envOrDefault("SERVERDASH_DB_PATH", filepath.Join(dataDir, "serverdash.db")),
 		JWTSecret:     resolveJWTSecret(dataDir),
-		CaddyBin:      envOrLegacyDefault("SERVERDASH_CADDY_BIN", "WEBCASA_CADDY_BIN", "caddy"),
-		CaddyfilePath: envOrLegacyDefault("SERVERDASH_CADDYFILE_PATH", "WEBCASA_CADDYFILE_PATH", filepath.Join(dataDir, "Caddyfile")),
-		LogDir:        envOrLegacyDefault("SERVERDASH_LOG_DIR", "WEBCASA_LOG_DIR", filepath.Join(dataDir, "logs")),
+		CaddyBin:      envOrDefault("SERVERDASH_CADDY_BIN", "caddy"),
+		CaddyfilePath: envOrDefault("SERVERDASH_CADDYFILE_PATH", filepath.Join(dataDir, "Caddyfile")),
+		LogDir:        envOrDefault("SERVERDASH_LOG_DIR", filepath.Join(dataDir, "logs")),
 		DataDir:       dataDir,
-		AdminAPI:      envOrLegacyDefault("SERVERDASH_ADMIN_API", "WEBCASA_ADMIN_API", "http://localhost:2019"),
+		AdminAPI:      envOrDefault("SERVERDASH_ADMIN_API", "http://localhost:2019"),
 	}
 
 	// Ensure directories exist
@@ -58,7 +58,7 @@ func resolveJWTSecret(dataDir string) string {
 	}
 
 	// 1. Explicit env var takes precedence (if not an insecure default)
-	if envSecret := envOrLegacyDefault("SERVERDASH_JWT_SECRET", "WEBCASA_JWT_SECRET", ""); envSecret != "" && !insecureDefaults[envSecret] {
+	if envSecret := envOrDefault("SERVERDASH_JWT_SECRET", ""); envSecret != "" && !insecureDefaults[envSecret] {
 		return envSecret
 	}
 

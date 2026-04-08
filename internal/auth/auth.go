@@ -225,7 +225,7 @@ func isWebSocketUpgrade(r *http.Request) bool {
 func parseWebSocketProtocolToken(r *http.Request) string {
 	for _, part := range strings.Split(r.Header.Get("Sec-WebSocket-Protocol"), ",") {
 		protocol := strings.TrimSpace(part)
-		if protocol == "" || protocol == "serverdash-auth" || protocol == "webcasa-auth" {
+		if protocol == "" || protocol == "serverdash-auth" {
 			continue
 		}
 		return protocol

@@ -5,7 +5,7 @@ import LanguageDetector from 'i18next-browser-languagedetector'
 import en from './locales/en.json'
 import vi from './locales/vi.json'
 
-const storedLang = localStorage.getItem('serverdash-lang') || localStorage.getItem('webcasa-lang')
+const storedLang = localStorage.getItem('serverdash-lang')
 if (storedLang && !localStorage.getItem('serverdash-lang')) {
     localStorage.setItem('serverdash-lang', storedLang)
 }

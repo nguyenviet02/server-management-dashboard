@@ -467,9 +467,6 @@ func (s *Service) backupPanel(parentCtx context.Context, destDir string, snapID 
 	// Copy SQLite DB using VACUUM INTO for consistency.
 	dbPath := os.Getenv("SERVERDASH_DB_PATH")
 	if dbPath == "" {
-		dbPath = os.Getenv("WEBCASA_DB_PATH")
-	}
-	if dbPath == "" {
 		dbPath = "/opt/serverdash/data/serverdash.db"
 	}
 	if _, err := os.Stat(dbPath); err == nil {
@@ -487,9 +484,6 @@ func (s *Service) backupPanel(parentCtx context.Context, destDir string, snapID 
 
 	// Copy Caddyfile.
 	caddyfilePath := os.Getenv("SERVERDASH_CADDYFILE_PATH")
-	if caddyfilePath == "" {
-		caddyfilePath = os.Getenv("WEBCASA_CADDYFILE_PATH")
-	}
 	if caddyfilePath == "" {
 		caddyfilePath = "/etc/caddy/Caddyfile"
 	}
@@ -570,7 +564,7 @@ func (s *Service) backupDatabases(parentCtx context.Context, destDir string, sna
 		if containsAny(name, "mysql", "mariadb") {
 			// Pass password via environment variable to avoid /proc exposure.
 			dumpCmd = exec.CommandContext(dumpCtx, "docker", "exec",
-				"-e", "MYSQL_PWD="+firstNonEmpty(os.Getenv("SERVERDASH_DB_ROOT_PASS"), os.Getenv("WEBCASA_DB_ROOT_PASS")),
+				"-e", "MYSQL_PWD="+os.Getenv("SERVERDASH_DB_ROOT_PASS"),
 				name, "mysqldump", "--all-databases", "-u", "root")
 		} else if containsAny(name, "postgres") {
 			dumpCmd = exec.CommandContext(dumpCtx, "docker", "exec", name,
