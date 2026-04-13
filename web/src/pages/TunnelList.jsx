@@ -9,6 +9,7 @@ const emptyForm = {
     config_path: '',
     credential_path: '',
     shared_credential_key: '',
+    service_name: '',
 }
 
 export default function TunnelList() {
@@ -46,6 +47,7 @@ export default function TunnelList() {
             config_path: tunnel.config_path || '',
             credential_path: tunnel.credential_path || '',
             shared_credential_key: tunnel.shared_credential_key || '',
+            service_name: tunnel.service_name || '',
         })
         setDialogOpen(true)
     }
@@ -159,6 +161,11 @@ export default function TunnelList() {
                         <label>
                             <Text as="div" size="2" mb="1" weight="medium">Shared credential key</Text>
                             <TextField.Root value={form.shared_credential_key} onChange={(e) => setForm((current) => ({ ...current, shared_credential_key: e.target.value }))} />
+                        </label>
+                        <label>
+                            <Text as="div" size="2" mb="1" weight="medium">Service name</Text>
+                            <TextField.Root value={form.service_name} onChange={(e) => setForm((current) => ({ ...current, service_name: e.target.value }))} />
+                            <Text size="1" color="gray">Match the systemd service name used for this tunnel.</Text>
                         </label>
                     </Flex>
 

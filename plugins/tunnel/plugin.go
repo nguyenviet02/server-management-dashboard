@@ -42,7 +42,7 @@ func (p *Plugin) Init(ctx *pluginpkg.Context) error {
 	r.GET("/tunnels", p.handler.ListTunnels)
 	r.GET("/tunnels/:id", p.handler.GetTunnel)
 	r.GET("/tunnels/:id/config", p.handler.GetTunnelConfig)
-	r.GET("/service-status", p.handler.ServiceStatus)
+	r.GET("/tunnels/:id/service-status", p.handler.ServiceStatus)
 
 	a.POST("/tunnels", p.handler.CreateTunnel)
 	a.PUT("/tunnels/:id", p.handler.UpdateTunnel)
@@ -51,7 +51,7 @@ func (p *Plugin) Init(ctx *pluginpkg.Context) error {
 	a.PUT("/tunnels/:id/ingress", p.handler.UpdateIngress)
 	a.DELETE("/tunnels/:id/ingress", p.handler.DeleteIngress)
 	a.POST("/tunnels/:id/route-dns", p.handler.RouteDNS)
-	a.POST("/service-restart", p.handler.RestartService)
+	a.POST("/tunnels/:id/service-restart", p.handler.RestartService)
 
 	ctx.Logger.Info("Tunnel plugin routes registered")
 	return nil

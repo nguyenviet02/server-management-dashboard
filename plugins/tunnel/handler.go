@@ -1,10 +1,13 @@
 package tunnel
 
 import (
+	"errors"
 	"net/http"
 	"strconv"
+	"strings"
 
 	"github.com/gin-gonic/gin"
+	"gorm.io/gorm"
 )
 
 type Handler struct {
@@ -178,15 +181,44 @@ func (h *Handler) RouteDNS(c *gin.Context) {
 }
 
 func (h *Handler) ServiceStatus(c *gin.Context) {
-	c.JSON(http.StatusOK, h.svc.ServiceStatus())
+	id, err := parseID(c)
+	if err != nil {
+		return
+	}
+	status, err := h.svc.ServiceStatus(id)
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "tunnel not found"})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, status)
 }
 
 func (h *Handler) RestartService(c *gin.Context) {
-	if err := h.svc.RestartService(); err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+	id, err := parseID(c)
+	if err != nil {
+		return
+	}
+	if err := h.svc.RestartService(id); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "tunnel not found"})
+			return
+		}
+		if isRestartExecutionError(err) {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"ok": true})
+}
+
+func isRestartExecutionError(err error) bool {
+	return strings.HasPrefix(err.Error(), "restart ")
 }
 
 func parseID(c *gin.Context) (uint, error) {

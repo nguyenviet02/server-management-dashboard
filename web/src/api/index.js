@@ -462,8 +462,8 @@ export const tunnelAPI = {
     updateIngress: (id, data) => api.put(`/plugins/tunnel/tunnels/${id}/ingress`, data),
     deleteIngress: (id, ingressId) => api.delete(`/plugins/tunnel/tunnels/${id}/ingress`, { data: { id: ingressId } }),
     routeDNS: (id, hostname) => api.post(`/plugins/tunnel/tunnels/${id}/route-dns`, { hostname }),
-    serviceStatus: () => api.get('/plugins/tunnel/service-status'),
-    restartService: () => api.post('/plugins/tunnel/service-restart'),
+    serviceStatus: (id) => api.get(`/plugins/tunnel/tunnels/${id}/service-status`),
+    restartService: (id) => api.post(`/plugins/tunnel/tunnels/${id}/service-restart`),
 }
 
 export const notifyAPI = {

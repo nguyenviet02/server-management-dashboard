@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Box, Flex, Text, Button, Card, Heading, Table, Badge, Dialog, TextField } from '@radix-ui/themes'
-import { ArrowLeft, Plus, Trash2, Pencil, RotateCw } from 'lucide-react'
+import { Box, Flex, Text, Button, Card, Heading, Table, Badge, Dialog, TextField, Callout } from '@radix-ui/themes'
+import { ArrowLeft, Plus, Trash2, Pencil, RotateCw, AlertTriangle } from 'lucide-react'
 import { useNavigate, useParams } from 'react-router'
 import { tunnelAPI } from '../api/index.js'
 
@@ -21,16 +21,20 @@ export default function TunnelDetail() {
     const [editing, setEditing] = useState(null)
     const [form, setForm] = useState(emptyIngress)
     const [saving, setSaving] = useState(false)
+    const hasServiceName = Boolean(tunnel?.service_name?.trim())
 
     const load = async () => {
         try {
-            const [detailRes, statusRes] = await Promise.all([
-                tunnelAPI.getTunnelConfig(id),
-                tunnelAPI.serviceStatus(),
-            ])
-            setTunnel(detailRes.data?.tunnel || null)
+            const detailRes = await tunnelAPI.getTunnelConfig(id)
+            const nextTunnel = detailRes.data?.tunnel || null
+            setTunnel(nextTunnel)
             setConfig(detailRes.data?.config || null)
-            setStatus(statusRes.data || null)
+            if (nextTunnel?.service_name?.trim()) {
+                const statusRes = await tunnelAPI.serviceStatus(id)
+                setStatus(statusRes.data || null)
+            } else {
+                setStatus(null)
+            }
         } catch (e) {
             alert(e.response?.data?.error || e.message || 'Failed to load tunnel')
             navigate('/tunnels')
@@ -92,7 +96,7 @@ export default function TunnelDetail() {
 
     const restart = async () => {
         try {
-            await tunnelAPI.restartService()
+            await tunnelAPI.restartService(id)
             load()
         } catch (e) {
             alert(e.response?.data?.error || e.message || 'Restart failed')
@@ -115,9 +119,11 @@ export default function TunnelDetail() {
                         <Text size="2" color="gray">Manage ingress routes for this tunnel.</Text>
                     </Box>
                 </Flex>
-                <Button onClick={restart}>
-                    <RotateCw size={16} /> Restart cloudflared
-                </Button>
+                {hasServiceName ? (
+                    <Button onClick={restart}>
+                        <RotateCw size={16} /> Restart {tunnel.service_name}
+                    </Button>
+                ) : null}
             </Flex>
 
             <Flex direction="column" gap="4">
@@ -126,14 +132,26 @@ export default function TunnelDetail() {
                         <Heading size="3">Tunnel overview</Heading>
                         <Flex gap="3" wrap="wrap">
                             <Badge variant="soft">{config?.tunnel_name || tunnel?.tunnel_name}</Badge>
-                            <Badge color={status?.active === 'active' ? 'green' : 'gray'}>{status?.active || 'unknown'}</Badge>
-                            <Badge color={status?.enabled === 'enabled' ? 'green' : 'gray'}>{status?.enabled || 'unknown'}</Badge>
+                            {hasServiceName ? (
+                                <>
+                                    <Badge color={status?.active === 'active' ? 'green' : 'gray'}>{status?.active || 'unknown'}</Badge>
+                                    <Badge color={status?.enabled === 'enabled' ? 'green' : 'gray'}>{status?.enabled || 'unknown'}</Badge>
+                                </>
+                            ) : null}
                         </Flex>
                         <Text size="2"><strong>Config path:</strong> {tunnel?.config_path}</Text>
                         <Text size="2"><strong>Credential path:</strong> {tunnel?.credential_path}</Text>
                         {tunnel?.shared_credential_key ? (
                             <Text size="2"><strong>Shared credential key:</strong> {tunnel.shared_credential_key}</Text>
                         ) : null}
+                        {hasServiceName ? (
+                            <Text size="2"><strong>Service name:</strong> {tunnel.service_name}</Text>
+                        ) : (
+                            <Callout.Root color="orange">
+                                <Callout.Icon><AlertTriangle size={16} /></Callout.Icon>
+                                <Callout.Text>Add a service name in tunnel settings to enable status and restart.</Callout.Text>
+                            </Callout.Root>
+                        )}
                     </Flex>
                 </Card>
 

@@ -230,30 +230,47 @@ func (s *Service) RouteDNS(id uint, hostname string) error {
 	return s.runCloudflared(buildRouteDNSArgs(tunnel, hostname)...)
 }
 
-func (s *Service) ServiceStatus() map[string]any {
-	status := map[string]any{
-		"ok":      false,
-		"active":  "unknown",
-		"enabled": "unknown",
+func (s *Service) ServiceStatus(id uint) (map[string]any, error) {
+	tunnel, err := s.GetTunnel(id)
+	if err != nil {
+		return nil, err
 	}
-	active, err := exec.Command("systemctl", "is-active", "cloudflared").CombinedOutput()
+	serviceName := strings.TrimSpace(tunnel.ServiceName)
+	if serviceName == "" {
+		return nil, fmt.Errorf("service name is required")
+	}
+	status := map[string]any{
+		"ok":           false,
+		"service_name": serviceName,
+		"active":       "unknown",
+		"enabled":      "unknown",
+	}
+	active, err := exec.Command("systemctl", "is-active", serviceName).CombinedOutput()
 	if err == nil {
 		status["ok"] = true
 		status["active"] = strings.TrimSpace(string(active))
 	} else {
 		status["error"] = strings.TrimSpace(string(active))
 	}
-	enabled, err := exec.Command("systemctl", "is-enabled", "cloudflared").CombinedOutput()
+	enabled, err := exec.Command("systemctl", "is-enabled", serviceName).CombinedOutput()
 	if err == nil {
 		status["enabled"] = strings.TrimSpace(string(enabled))
 	}
-	return status
+	return status, nil
 }
 
-func (s *Service) RestartService() error {
-	cmd := exec.Command("sudo", "systemctl", "restart", "cloudflared")
+func (s *Service) RestartService(id uint) error {
+	tunnel, err := s.GetTunnel(id)
+	if err != nil {
+		return err
+	}
+	serviceName := strings.TrimSpace(tunnel.ServiceName)
+	if serviceName == "" {
+		return fmt.Errorf("service name is required")
+	}
+	cmd := exec.Command("sudo", "systemctl", "restart", serviceName)
 	if out, err := cmd.CombinedOutput(); err != nil {
-		return fmt.Errorf("restart cloudflared: %s: %s", err, strings.TrimSpace(string(out)))
+		return fmt.Errorf("restart %s: %s: %s", serviceName, err, strings.TrimSpace(string(out)))
 	}
 	return nil
 }
@@ -263,6 +280,7 @@ func (s *Service) buildTunnelRecord(input *Tunnel, current *Tunnel) (*Tunnel, er
 		return nil, fmt.Errorf("tunnel payload is required")
 	}
 	name := strings.TrimSpace(input.Name)
+	serviceName := strings.TrimSpace(input.ServiceName)
 	configPath, err := ensureFilePath(input.ConfigPath, "config")
 	if err != nil {
 		return nil, err
@@ -281,6 +299,9 @@ func (s *Service) buildTunnelRecord(input *Tunnel, current *Tunnel) (*Tunnel, er
 	if strings.TrimSpace(config.TunnelName) == "" {
 		return nil, fmt.Errorf("tunnel name could not be determined from the config file")
 	}
+	if err := s.ensureUniqueServiceName(serviceName, current); err != nil {
+		return nil, err
+	}
 
 	record := &Tunnel{
 		Name:                name,
@@ -288,12 +309,31 @@ func (s *Service) buildTunnelRecord(input *Tunnel, current *Tunnel) (*Tunnel, er
 		ConfigPath:          configPath,
 		CredentialPath:      credentialPath,
 		SharedCredentialKey: strings.TrimSpace(input.SharedCredentialKey),
+		ServiceName:         serviceName,
 	}
 	if current != nil {
 		record.ID = current.ID
 		record.CreatedAt = current.CreatedAt
 	}
 	return record, nil
+}
+
+func (s *Service) ensureUniqueServiceName(serviceName string, current *Tunnel) error {
+	if serviceName == "" {
+		return nil
+	}
+	query := s.db.Model(&Tunnel{}).Where("service_name = ?", serviceName)
+	if current != nil {
+		query = query.Where("id <> ?", current.ID)
+	}
+	var count int64
+	if err := query.Count(&count).Error; err != nil {
+		return err
+	}
+	if count > 0 {
+		return fmt.Errorf("service name already in use by another tunnel")
+	}
+	return nil
 }
 
 func (s *Service) readTunnelConfig(configPath string) (*TunnelConfig, error) {

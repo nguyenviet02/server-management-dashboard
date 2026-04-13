@@ -10,6 +10,7 @@ type Tunnel struct {
 	ConfigPath          string    `gorm:"size:1024;not null;uniqueIndex" json:"config_path"`
 	CredentialPath      string    `gorm:"size:1024;not null" json:"credential_path"`
 	SharedCredentialKey string    `gorm:"size:255" json:"shared_credential_key"`
+	ServiceName         string    `gorm:"size:255" json:"service_name"`
 	CreatedAt           time.Time `json:"created_at"`
 	UpdatedAt           time.Time `json:"updated_at"`
 }
