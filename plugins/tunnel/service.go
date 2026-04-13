@@ -1,7 +1,7 @@
 package tunnel
 
 import (
-	"crypto/rand"
+	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
 	"log/slog"
@@ -9,7 +9,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
-	"time"
 
 	pluginpkg "github.com/nguyenviet02/server-management-dashboard/internal/plugin"
 	"gorm.io/gorm"
@@ -461,16 +460,17 @@ func normalizeIngressMap(input map[string]string, index int) IngressEntry {
 }
 
 func normalizeIngressEntry(entry IngressEntry, index int) IngressEntry {
+	hostname := strings.TrimSpace(entry.Hostname)
+	service := strings.TrimSpace(entry.Service)
 	id := strings.TrimSpace(entry.ID)
 	if id == "" {
-		b := make([]byte, 6)
-		_, _ = rand.Read(b)
-		id = fmt.Sprintf("ingress-%d-%s", time.Now().UnixNano(), hex.EncodeToString(b))
+		sum := sha1.Sum([]byte(fmt.Sprintf("%d\x00%s\x00%s", index, hostname, service)))
+		id = fmt.Sprintf("ingress-%d-%s", index, hex.EncodeToString(sum[:6]))
 	}
 	return IngressEntry{
 		ID:       id,
-		Hostname: strings.TrimSpace(entry.Hostname),
-		Service:  strings.TrimSpace(entry.Service),
+		Hostname: hostname,
+		Service:  service,
 	}
 }
 
