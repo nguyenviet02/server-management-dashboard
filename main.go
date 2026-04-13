@@ -33,6 +33,7 @@ import (
 	firewallplugin "github.com/nguyenviet02/server-management-dashboard/plugins/firewall"
 	phpplugin "github.com/nguyenviet02/server-management-dashboard/plugins/php"
 	cronjobplugin "github.com/nguyenviet02/server-management-dashboard/plugins/cronjob"
+	tunnelplugin "github.com/nguyenviet02/server-management-dashboard/plugins/tunnel"
 	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
@@ -401,6 +402,9 @@ func initPlugins(db *gorm.DB, protectedRouter *gin.RouterGroup, adminRouter *gin
 	}
 	if err := pluginMgr.Register(cronjobplugin.New()); err != nil {
 		log.Printf("⚠️  Register cronjob plugin: %v", err)
+	}
+	if err := pluginMgr.Register(tunnelplugin.New()); err != nil {
+		log.Printf("⚠️  Register tunnel plugin: %v", err)
 	}
 
 	// Initialise and start all enabled plugins.

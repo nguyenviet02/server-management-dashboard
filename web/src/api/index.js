@@ -451,6 +451,21 @@ export const firewallAPI = {
     start: () => api.post('/plugins/firewall/start'),
 }
 
+export const tunnelAPI = {
+    listTunnels: () => api.get('/plugins/tunnel/tunnels'),
+    getTunnel: (id) => api.get(`/plugins/tunnel/tunnels/${id}`),
+    createTunnel: (data) => api.post('/plugins/tunnel/tunnels', data),
+    updateTunnel: (id, data) => api.put(`/plugins/tunnel/tunnels/${id}`, data),
+    deleteTunnel: (id) => api.delete(`/plugins/tunnel/tunnels/${id}`),
+    getTunnelConfig: (id) => api.get(`/plugins/tunnel/tunnels/${id}/config`),
+    addIngress: (id, data) => api.post(`/plugins/tunnel/tunnels/${id}/ingress`, data),
+    updateIngress: (id, data) => api.put(`/plugins/tunnel/tunnels/${id}/ingress`, data),
+    deleteIngress: (id, ingressId) => api.delete(`/plugins/tunnel/tunnels/${id}/ingress`, { data: { id: ingressId } }),
+    routeDNS: (id, hostname) => api.post(`/plugins/tunnel/tunnels/${id}/route-dns`, { hostname }),
+    serviceStatus: () => api.get('/plugins/tunnel/service-status'),
+    restartService: () => api.post('/plugins/tunnel/service-restart'),
+}
+
 export const notifyAPI = {
     listChannels: () => api.get('/notify/channels'),
     createChannel: (data) => api.post('/notify/channels', data),

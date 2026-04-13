@@ -30,6 +30,8 @@ import FirewallManager from './pages/FirewallManager.jsx'
 import PHPManager from './pages/PHPManager.jsx'
 import CronJobManager from './pages/CronJobManager.jsx'
 import MCPManager from './pages/MCPManager.jsx'
+import TunnelList from './pages/TunnelList.jsx'
+import TunnelDetail from './pages/TunnelDetail.jsx'
 
 function ProtectedRoute({ children }) {
     const token = useAuthStore((s) => s.token)
@@ -83,6 +85,8 @@ export default function App() {
                     <Route path="php" element={<PHPManager />} />
                     <Route path="cronjob" element={<CronJobManager />} />
                     <Route path="mcp" element={<MCPManager />} />
+                    <Route path="tunnels" element={<TunnelList />} />
+                    <Route path="tunnels/:id" element={<TunnelDetail />} />
                     <Route path="plugins" element={<PluginsPage />} />
 
                     {/* Redirects: old standalone pages → Settings */}
