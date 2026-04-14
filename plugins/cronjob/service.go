@@ -23,6 +23,7 @@ const maxOutputBytes = 64 * 1024 // 64KB
 var (
 	ErrCrontabConflict    = errors.New("crontab changed since it was loaded")
 	ErrCrontabUnavailable = errors.New("crontab command is not available")
+	ErrCrontabEmpty       = errors.New("at least one cron entry is required")
 )
 
 // Service manages cron job lifecycle, scheduling, and execution.
@@ -296,7 +297,7 @@ func splitCrontabLine(line string) (string, string, bool) {
 
 func buildCrontab(entries []CrontabEntry) (string, error) {
 	if len(entries) == 0 {
-		return "", nil
+		return "", ErrCrontabEmpty
 	}
 
 	parser := cron.NewParser(cron.Minute | cron.Hour | cron.Dom | cron.Month | cron.Dow | cron.Descriptor)
@@ -319,7 +320,7 @@ func buildCrontab(entries []CrontabEntry) (string, error) {
 		}
 		lines = append(lines, line)
 	}
-	return strings.Join(lines, "\n"), nil
+	return strings.Join(lines, "\n") + "\n", nil
 }
 
 func installCrontab(raw string) error {

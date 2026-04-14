@@ -48,9 +48,11 @@ export default function CronJobManager() {
         fetchCrontab()
     }, [fetchCrontab])
 
+    const hasNoEntries = entries.length === 0
+
     const hasInvalidEntries = useMemo(
-        () => entries.some(entry => !entry.schedule.trim() || !entry.command.trim()),
-        [entries]
+        () => hasNoEntries || entries.some(entry => !entry.schedule.trim() || !entry.command.trim()),
+        [entries, hasNoEntries]
     )
 
     const updateEntry = (id, field, value) => {
@@ -66,6 +68,11 @@ export default function CronJobManager() {
     }
 
     const handleSave = async () => {
+        if (hasNoEntries) {
+            setError(t('cronjob.empty_error'))
+            return
+        }
+
         setSaving(true)
         setError('')
         try {

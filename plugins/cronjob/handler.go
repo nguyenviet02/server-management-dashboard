@@ -44,6 +44,8 @@ func (h *Handler) SaveCrontab(c *gin.Context) {
 			status = http.StatusConflict
 		case errors.Is(err, ErrCrontabUnavailable):
 			status = http.StatusInternalServerError
+		case errors.Is(err, ErrCrontabEmpty):
+			status = http.StatusBadRequest
 		}
 		c.JSON(status, gin.H{"error": err.Error()})
 		return

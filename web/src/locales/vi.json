@@ -1643,6 +1643,7 @@
     "expression_examples": "Ví dụ: */5 * * * * (mỗi 5 phút), 0 3 * * * (mỗi ngày 3 giờ sáng), 0 0 * * 0 (hàng tuần)",
     "command": "Lệnh",
     "command_placeholder": "ví dụ: /usr/bin/node /app/cleanup.js",
+    "empty_error": "Cần ít nhất một mục cron",
     "working_dir": "Thư mục làm việc",
     "working_dir_placeholder": "/path/to/directory",
     "tags": "Thẻ",

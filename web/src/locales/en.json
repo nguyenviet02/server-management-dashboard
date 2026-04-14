@@ -1643,6 +1643,7 @@
     "expression_examples": "Examples: */5 * * * * (every 5 min), 0 3 * * * (daily 3am), 0 0 * * 0 (weekly)",
     "command": "Command",
     "command_placeholder": "e.g. /usr/bin/node /app/cleanup.js",
+    "empty_error": "At least one cron entry is required",
     "working_dir": "Working Directory",
     "working_dir_placeholder": "/path/to/directory",
     "tags": "Tags",
