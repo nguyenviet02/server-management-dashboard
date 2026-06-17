@@ -22,6 +22,9 @@ type MetricRecord struct {
 	DiskWriteBytes uint64    `json:"disk_write_bytes"`
 	NetRecvBytes   uint64    `json:"net_recv_bytes"`
 	NetSentBytes   uint64    `json:"net_sent_bytes"`
+	CpuTemp        float64   `json:"cpu_temp"`
+	CpuFreqPercent float64   `json:"cpu_freq_percent"`
+	PowerPlugged   bool      `json:"power_plugged"`
 }
 
 func (MetricRecord) TableName() string { return "plugin_monitoring_metrics" }
@@ -125,4 +128,7 @@ type MetricSnapshot struct {
 	DiskWriteBytes uint64  `json:"disk_write_bytes"`
 	NetRecvBytes   uint64  `json:"net_recv_bytes"`
 	NetSentBytes   uint64  `json:"net_sent_bytes"`
+	CpuTemp        float64 `json:"cpu_temp"`
+	CpuFreqPercent float64 `json:"cpu_freq_percent"`
+	PowerPlugged   bool    `json:"power_plugged"`
 }

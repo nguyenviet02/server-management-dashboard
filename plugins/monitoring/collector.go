@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log/slog"
+	"os"
 	"os/exec"
 	"strings"
 	"time"
@@ -14,6 +15,7 @@ import (
 	"github.com/shirou/gopsutil/v4/load"
 	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/shirou/gopsutil/v4/net"
+	"github.com/shirou/gopsutil/v4/sensors"
 )
 
 // Collector gathers system and container metrics.
@@ -83,7 +85,91 @@ func (c *Collector) CollectSystem() (*MetricSnapshot, error) {
 		snap.NetSentBytes = netIO[0].BytesSent
 	}
 
+	// CPU Temperature via sensors
+	temps, terr := sensors.SensorsTemperatures()
+	if terr == nil {
+		var maxTemp float64
+		for _, t := range temps {
+			s := strings.ToLower(t.SensorKey)
+			if strings.Contains(s, "cpu") || strings.Contains(s, "core") || strings.Contains(s, "package") || strings.Contains(s, "k10temp") || strings.Contains(s, "coretemp") {
+				if t.Temperature > maxTemp {
+					maxTemp = t.Temperature
+				}
+			}
+		}
+		// Fallback: use the highest sensor reading if no CPU-specific sensors found
+		if maxTemp == 0 && len(temps) > 0 {
+			for _, t := range temps {
+				if t.Temperature > maxTemp && t.Temperature < 120 {
+					maxTemp = t.Temperature
+				}
+			}
+		}
+		snap.CpuTemp = maxTemp
+	}
+
+	// CPU Frequency percentage (current / max)
+	cpuFreqs, ferr := cpu.Info()
+	if ferr == nil && len(cpuFreqs) > 0 {
+		var totalCurrent, totalMax float64
+		for _, info := range cpuFreqs {
+			totalCurrent += info.Mhz
+			if info.Mhz > totalMax {
+				totalMax = info.Mhz
+			}
+		}
+		avgMhz := totalCurrent / float64(len(cpuFreqs))
+		if totalMax > 0 {
+			snap.CpuFreqPercent = (avgMhz / totalMax) * 100
+		}
+	}
+
+	// Power / charging status — read from /sys/class/power_supply (Linux)
+	snap.PowerPlugged = readPowerPlugged()
+
 	return snap, nil
+}
+
+// readPowerPlugged checks /sys/class/power_supply for AC adapter or battery status.
+// Returns true if plugged in (or on a system without battery like a server).
+func readPowerPlugged() bool {
+	dir := "/sys/class/power_supply"
+	entries, err := os.ReadDir(dir)
+	if err != nil {
+		// Not Linux or no power supply info → assume plugged in (server)
+		return true
+	}
+
+	hasBattery := false
+	for _, e := range entries {
+		name := strings.ToLower(e.Name())
+		// Look for AC adapter entries first
+		if strings.HasPrefix(name, "ac") || strings.Contains(name, "ac_adapter") || strings.Contains(name, "mains") {
+			onlinePath := dir + "/" + e.Name() + "/online"
+			data, rerr := os.ReadFile(onlinePath)
+			if rerr == nil && strings.TrimSpace(string(data)) == "1" {
+				return true
+			}
+		}
+		if strings.HasPrefix(name, "bat") {
+			hasBattery = true
+			statusPath := dir + "/" + e.Name() + "/status"
+			data, rerr := os.ReadFile(statusPath)
+			if rerr == nil {
+				status := strings.TrimSpace(strings.ToLower(string(data)))
+				if status == "charging" || status == "full" {
+					return true
+				}
+			}
+		}
+	}
+
+	// If there's a battery but it's discharging, return false
+	if hasBattery {
+		return false
+	}
+	// No battery found → server/desktop, assume plugged in
+	return true
 }
 
 // dockerStatsEntry represents one entry from `docker stats --no-stream --format json`.

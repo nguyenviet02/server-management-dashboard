@@ -3,7 +3,7 @@ import { Box, Card, Flex, Grid, Heading, Text, Badge, Spinner, Tooltip } from '@
 import {
     Globe, Container, Package, Cpu, Monitor, Clock,
     Server, ArrowUpRight, Plus, Terminal, FolderOpen,
-    ArrowUp, ArrowDown, ExternalLink,
+    ArrowUp, ArrowDown, ExternalLink, Thermometer, Zap, ZapOff,
 } from 'lucide-react'
 import {
     dashboardAPI, dockerAPI, pluginAPI, monitoringAPI,
@@ -230,6 +230,9 @@ export default function Dashboard() {
     const swapTotal = mon?.swap_total
     const netSent = mon?.net_sent_bytes
     const netRecv = mon?.net_recv_bytes
+    const cpuTemp = mon?.cpu_temp ?? null
+    const cpuFreqPct = mon?.cpu_freq_percent ?? null
+    const powerPlugged = mon?.power_plugged ?? null
 
     const showAppsRow = enabled('appstore') || enabled('docker')
     const showApps = enabled('appstore')
@@ -294,6 +297,17 @@ export default function Dashboard() {
                                 : undefined
                     }
                 />
+                {/* Temperature stat card */}
+                {enabled('monitoring') && cpuTemp != null && cpuTemp > 0 && (
+                    <StatCard
+                        icon={Thermometer}
+                        label={t('dashboard.cpu_temp', 'CPU Temp')}
+                        value={`${cpuTemp.toFixed(1)}°C`}
+                        color={cpuTemp > 80 ? 'red' : cpuTemp > 60 ? 'amber' : 'green'}
+                        loading={loading}
+                        tooltip={cpuTemp > 80 ? t('dashboard.temp_critical', 'Temperature is critical!') : cpuTemp > 60 ? t('dashboard.temp_warm', 'Temperature is elevated') : t('dashboard.temp_normal', 'Temperature is normal')}
+                    />
+                )}
             </Grid>
 
             {/* ── Row 2: System Resources + OS Info ── */}
@@ -329,7 +343,38 @@ export default function Dashboard() {
                                         detail={swapPct != null ? `${swapPct.toFixed(1)}% — ${formatBytes(swapUsed)} / ${formatBytes(swapTotal)}` : '-'}
                                     />
                                 )}
-                                <Flex gap="5" mt="2">
+                                {/* CPU Pin (Frequency) % */}
+                                {cpuFreqPct != null && cpuFreqPct > 0 && (
+                                    <ProgressBar
+                                        label={t('dashboard.cpu_pin', 'CPU Pin (Freq %)')}
+                                        percent={cpuFreqPct}
+                                        detail={`${cpuFreqPct.toFixed(1)}%`}
+                                    />
+                                )}
+                                {/* Temperature bar */}
+                                {cpuTemp != null && cpuTemp > 0 && (
+                                    <Box mb="3">
+                                        <Flex justify="between" mb="1">
+                                            <Flex align="center" gap="1">
+                                                <Thermometer size={13} style={{ color: cpuTemp > 80 ? 'var(--red-9)' : cpuTemp > 60 ? 'var(--amber-9)' : 'var(--green-9)' }} />
+                                                <Text size="2" color="gray">{t('dashboard.cpu_temp', 'CPU Temperature')}</Text>
+                                            </Flex>
+                                            <Text size="2" style={{ color: cpuTemp > 80 ? 'var(--red-9)' : cpuTemp > 60 ? 'var(--amber-9)' : 'var(--cp-text)' }}>
+                                                {cpuTemp.toFixed(1)}°C
+                                            </Text>
+                                        </Flex>
+                                        <div style={{ height: 8, borderRadius: 4, background: 'var(--cp-border)', overflow: 'hidden' }}>
+                                            <div style={{
+                                                height: '100%',
+                                                width: `${Math.min((cpuTemp / 100) * 100, 100)}%`,
+                                                borderRadius: 4,
+                                                background: cpuTemp > 80 ? 'var(--red-9)' : cpuTemp > 60 ? 'var(--amber-9)' : 'var(--green-9)',
+                                                transition: 'width 0.3s ease',
+                                            }} />
+                                        </div>
+                                    </Box>
+                                )}
+                                <Flex gap="5" mt="2" align="center" wrap="wrap">
                                     <Flex align="center" gap="2">
                                         <ArrowUp size={14} style={{ color: 'var(--green-9)' }} />
                                         <Text size="2" color="gray">{t('dashboard.sent')}</Text>
@@ -340,6 +385,19 @@ export default function Dashboard() {
                                         <Text size="2" color="gray">{t('dashboard.received')}</Text>
                                         <Text size="2" weight="medium" style={{ color: 'var(--cp-text)' }}>{formatBytes(netRecv)}</Text>
                                     </Flex>
+                                    {/* Power / Charging status */}
+                                    {powerPlugged !== null && (
+                                        <Flex align="center" gap="2">
+                                            {powerPlugged
+                                                ? <Zap size={14} style={{ color: 'var(--green-9)' }} />
+                                                : <ZapOff size={14} style={{ color: 'var(--amber-9)' }} />
+                                            }
+                                            <Text size="2" color="gray">{t('dashboard.power', 'Power')}</Text>
+                                            <Badge size="1" color={powerPlugged ? 'green' : 'amber'}>
+                                                {powerPlugged ? t('dashboard.plugged_in', 'Plugged In') : t('dashboard.on_battery', 'On Battery')}
+                                            </Badge>
+                                        </Flex>
+                                    )}
                                 </Flex>
                             </Box>
                         ) : (

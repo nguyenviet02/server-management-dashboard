@@ -5,7 +5,7 @@ import {
 } from '@radix-ui/themes'
 import {
     Cpu, MemoryStick, HardDrive, Network, Plus, Trash2, RefreshCw,
-    Bell, BellOff, AlertTriangle, CheckCircle, XCircle,
+    Bell, BellOff, AlertTriangle, CheckCircle, XCircle, Thermometer, Zap, ZapOff,
 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import {
@@ -316,6 +316,8 @@ export default function MonitoringDashboard({ embedded }) {
         disk_write: h.disk_write_bytes ?? 0,
         net_recv: h.net_recv_bytes ?? 0,
         net_sent: h.net_sent_bytes ?? 0,
+        cpu_freq: h.cpu_freq_percent ?? 0,
+        cpu_temp: h.cpu_temp ?? 0,
     }))
 
     const metricOptions = [
@@ -401,9 +403,53 @@ export default function MonitoringDashboard({ embedded }) {
                     icon={Network}
                     title={t('monitoring.network')}
                     percent={null}
-                    detail={`↓ ${formatBytes(m.net_recv_bytes)}/s  ↑ ${formatBytes(m.net_sent_bytes)}/s`}
+                    detail={`\u2193 ${formatBytes(m.net_recv_bytes)}/s  \u2191 ${formatBytes(m.net_sent_bytes)}/s`}
                     color="#8b5cf6"
                 />
+                {/* CPU Frequency (Pin %) */}
+                <MetricCard
+                    icon={Cpu}
+                    title={t('monitoring.cpu_freq', 'CPU Pin (Freq %)')}
+                    percent={m.cpu_freq_percent}
+                    detail={m.cpu_freq_percent != null ? `${formatPercent(m.cpu_freq_percent)} of max` : 'N/A'}
+                    color={m.cpu_freq_percent > 90 ? '#ef4444' : m.cpu_freq_percent > 70 ? '#f59e0b' : '#6366f1'}
+                />
+                {/* CPU Temperature */}
+                <MetricCard
+                    icon={Thermometer}
+                    title={t('monitoring.cpu_temp', 'CPU Temperature')}
+                    percent={m.cpu_temp != null && m.cpu_temp > 0 ? (m.cpu_temp / 100) * 100 : null}
+                    detail={m.cpu_temp != null && m.cpu_temp > 0 ? `${Number(m.cpu_temp).toFixed(1)}\u00b0C` : 'N/A'}
+                    color={m.cpu_temp > 80 ? '#ef4444' : m.cpu_temp > 60 ? '#f59e0b' : '#22c55e'}
+                />
+                {/* Power status */}
+                <Card style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)' }}>
+                    <Flex direction="column" gap="2" p="1">
+                        <Flex align="center" gap="2">
+                            <Flex align="center" justify="center" style={{ width: 36, height: 36, borderRadius: 8, background: m.power_plugged ? 'color-mix(in srgb, #22c55e 15%, transparent)' : 'color-mix(in srgb, #f59e0b 15%, transparent)', flexShrink: 0 }}>
+                                {m.power_plugged
+                                    ? <Zap size={18} style={{ color: '#22c55e' }} />
+                                    : <ZapOff size={18} style={{ color: '#f59e0b' }} />
+                                }
+                            </Flex>
+                            <Box style={{ flex: 1 }}>
+                                <Text size="1" color="gray">{t('monitoring.power_status', 'Power Status')}</Text>
+                                <Text size="5" weight="bold" style={{ color: 'var(--cp-text)', display: 'block' }}>
+                                    {m.power_plugged !== undefined
+                                        ? m.power_plugged ? t('dashboard.plugged_in', 'Plugged In') : t('dashboard.on_battery', 'On Battery')
+                                        : '—'
+                                    }
+                                </Text>
+                            </Box>
+                        </Flex>
+                        <Box style={{ height: 6, borderRadius: 3, background: 'var(--cp-border)' }}>
+                            <Box style={{ height: '100%', borderRadius: 3, width: m.power_plugged ? '100%' : '30%', background: m.power_plugged ? '#22c55e' : '#f59e0b', transition: 'width 0.4s ease' }} />
+                        </Box>
+                        <Text size="1" style={{ color: 'var(--cp-text-muted)' }}>
+                            {m.power_plugged ? t('monitoring.ac_power', 'Running on AC power') : t('monitoring.battery_power', 'Running on battery')}
+                        </Text>
+                    </Flex>
+                </Card>
             </Box>
 
             {/* Charts - 2 per row */}
@@ -496,6 +542,46 @@ export default function MonitoringDashboard({ embedded }) {
                                 stroke="#8b5cf6" dot={false} strokeWidth={2}
                             />
                         </LineChart>
+                    </ResponsiveContainer>
+                </ChartCard>
+
+                {/* CPU Pin (Frequency %) chart */}
+                <ChartCard title={t('monitoring.cpu_freq_chart', 'CPU Pin — Frequency %')}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--cp-border)" />
+                            <XAxis dataKey="time" tick={{ fontSize: 11, fill: 'var(--cp-text-muted)' }} />
+                            <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--cp-text-muted)' }} unit="%" />
+                            <Tooltip
+                                contentStyle={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)', borderRadius: 6 }}
+                                labelStyle={{ color: 'var(--cp-text)' }}
+                                formatter={(v) => `${Number(v).toFixed(1)}%`}
+                            />
+                            <Area
+                                type="monotone" dataKey="cpu_freq" name={t('monitoring.cpu_freq', 'CPU Freq %')}
+                                stroke="#6366f1" fill="#6366f1" fillOpacity={0.15}
+                            />
+                        </AreaChart>
+                    </ResponsiveContainer>
+                </ChartCard>
+
+                {/* CPU Temperature chart */}
+                <ChartCard title={t('monitoring.cpu_temp_chart', 'CPU Temperature (°C)')}>
+                    <ResponsiveContainer width="100%" height="100%">
+                        <AreaChart data={chartData}>
+                            <CartesianGrid strokeDasharray="3 3" stroke="var(--cp-border)" />
+                            <XAxis dataKey="time" tick={{ fontSize: 11, fill: 'var(--cp-text-muted)' }} />
+                            <YAxis domain={[0, 'auto']} tick={{ fontSize: 11, fill: 'var(--cp-text-muted)' }} unit="°C" />
+                            <Tooltip
+                                contentStyle={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)', borderRadius: 6 }}
+                                labelStyle={{ color: 'var(--cp-text)' }}
+                                formatter={(v) => `${Number(v).toFixed(1)}°C`}
+                            />
+                            <Area
+                                type="monotone" dataKey="cpu_temp" name={t('monitoring.cpu_temp', 'CPU Temp')}
+                                stroke="#ef4444" fill="#ef4444" fillOpacity={0.15}
+                            />
+                        </AreaChart>
                     </ResponsiveContainer>
                 </ChartCard>
             </Box>

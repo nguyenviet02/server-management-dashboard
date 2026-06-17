@@ -114,6 +114,9 @@ func (s *Service) collectOnce() {
 		DiskWriteBytes: snap.DiskWriteBytes,
 		NetRecvBytes:   snap.NetRecvBytes,
 		NetSentBytes:   snap.NetSentBytes,
+		CpuTemp:        snap.CpuTemp,
+		CpuFreqPercent: snap.CpuFreqPercent,
+		PowerPlugged:   snap.PowerPlugged,
 	}
 	if err := s.db.Create(&record).Error; err != nil {
 		s.logger.Error("persist metric record", "err", err)
