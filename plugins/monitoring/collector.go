@@ -125,51 +125,85 @@ func (c *Collector) CollectSystem() (*MetricSnapshot, error) {
 	}
 
 	// Power / charging status — read from /sys/class/power_supply (Linux)
-	snap.PowerPlugged = readPowerPlugged()
+	plugged, capacity, status := readBatteryInfo()
+	snap.PowerPlugged = plugged
+	snap.BatteryCapacity = capacity
+	snap.BatteryStatus = status
 
 	return snap, nil
 }
 
-// readPowerPlugged checks /sys/class/power_supply for AC adapter or battery status.
-// Returns true if plugged in (or on a system without battery like a server).
-func readPowerPlugged() bool {
-	dir := "/sys/class/power_supply"
-	entries, err := os.ReadDir(dir)
-	if err != nil {
-		// Not Linux or no power supply info → assume plugged in (server)
-		return true
-	}
+// readBatteryInfo reads battery capacity (%), charging status, and plugged state
+// from /sys/class/power_supply on Linux. Tries BAT1, BAT0, then any BAT* entry.
+// Returns (plugged bool, capacity int, status string).
+// On desktops/servers with no battery: returns (true, -1, "").
+func readBatteryInfo() (plugged bool, capacity int, status string) {
+	const dir = "/sys/class/power_supply"
 
-	hasBattery := false
-	for _, e := range entries {
-		name := strings.ToLower(e.Name())
-		// Look for AC adapter entries first
-		if strings.HasPrefix(name, "ac") || strings.Contains(name, "ac_adapter") || strings.Contains(name, "mains") {
-			onlinePath := dir + "/" + e.Name() + "/online"
-			data, rerr := os.ReadFile(onlinePath)
-			if rerr == nil && strings.TrimSpace(string(data)) == "1" {
-				return true
-			}
-		}
-		if strings.HasPrefix(name, "bat") {
-			hasBattery = true
-			statusPath := dir + "/" + e.Name() + "/status"
-			data, rerr := os.ReadFile(statusPath)
-			if rerr == nil {
-				status := strings.TrimSpace(strings.ToLower(string(data)))
-				if status == "charging" || status == "full" {
-					return true
+	// Priority order for battery names
+	batNames := []string{"BAT1", "BAT0"}
+
+	// Also scan directory for any BAT* we might have missed
+	if entries, err := os.ReadDir(dir); err == nil {
+		for _, e := range entries {
+			upper := strings.ToUpper(e.Name())
+			if strings.HasPrefix(upper, "BAT") {
+				// Add only if not already in the list
+				found := false
+				for _, n := range batNames {
+					if n == e.Name() {
+						found = true
+						break
+					}
+				}
+				if !found {
+					batNames = append(batNames, e.Name())
 				}
 			}
 		}
 	}
 
-	// If there's a battery but it's discharging, return false
-	if hasBattery {
-		return false
+	for _, bat := range batNames {
+		capPath := dir + "/" + bat + "/capacity"
+		statPath := dir + "/" + bat + "/status"
+
+		capData, capErr := os.ReadFile(capPath)
+		statData, statErr := os.ReadFile(statPath)
+
+		if capErr != nil && statErr != nil {
+			continue // this battery entry doesn't exist
+		}
+
+		var capVal int
+		if capErr == nil {
+			fmt.Sscanf(strings.TrimSpace(string(capData)), "%d", &capVal)
+		}
+
+		statStr := ""
+		if statErr == nil {
+			statStr = strings.TrimSpace(string(statData))
+		}
+
+		isCharging := strings.EqualFold(statStr, "Charging") || strings.EqualFold(statStr, "Full")
+		return isCharging, capVal, statStr
 	}
-	// No battery found → server/desktop, assume plugged in
-	return true
+
+	// Check AC adapters — if any is online, we're plugged in (desktop with no battery)
+	if entries, err := os.ReadDir(dir); err == nil {
+		for _, e := range entries {
+			upper := strings.ToUpper(e.Name())
+			if strings.HasPrefix(upper, "AC") || strings.Contains(upper, "MAINS") || strings.Contains(upper, "ADAPTER") {
+				onlinePath := dir + "/" + e.Name() + "/online"
+				data, rerr := os.ReadFile(onlinePath)
+				if rerr == nil && strings.TrimSpace(string(data)) == "1" {
+					return true, -1, "AC"
+				}
+			}
+		}
+	}
+
+	// No power_supply dir or no battery found — assume plugged in (server/desktop)
+	return true, -1, ""
 }
 
 // dockerStatsEntry represents one entry from `docker stats --no-stream --format json`.

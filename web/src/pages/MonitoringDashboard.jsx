@@ -422,34 +422,76 @@ export default function MonitoringDashboard({ embedded }) {
                     detail={m.cpu_temp != null && m.cpu_temp > 0 ? `${Number(m.cpu_temp).toFixed(1)}\u00b0C` : 'N/A'}
                     color={m.cpu_temp > 80 ? '#ef4444' : m.cpu_temp > 60 ? '#f59e0b' : '#22c55e'}
                 />
-                {/* Power status */}
+                {/* Power / Battery status card */}
                 <Card style={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)' }}>
                     <Flex direction="column" gap="2" p="1">
                         <Flex align="center" gap="2">
-                            <Flex align="center" justify="center" style={{ width: 36, height: 36, borderRadius: 8, background: m.power_plugged ? 'color-mix(in srgb, #22c55e 15%, transparent)' : 'color-mix(in srgb, #f59e0b 15%, transparent)', flexShrink: 0 }}>
+                            <Flex align="center" justify="center" style={{
+                                width: 36, height: 36, borderRadius: 8, flexShrink: 0,
+                                background: m.battery_status === 'Charging'
+                                    ? 'color-mix(in srgb, #3b82f6 15%, transparent)'
+                                    : m.power_plugged
+                                        ? 'color-mix(in srgb, #22c55e 15%, transparent)'
+                                        : 'color-mix(in srgb, #f59e0b 15%, transparent)',
+                            }}>
                                 {m.power_plugged
-                                    ? <Zap size={18} style={{ color: '#22c55e' }} />
+                                    ? <Zap size={18} style={{ color: m.battery_status === 'Charging' ? '#3b82f6' : '#22c55e' }} />
                                     : <ZapOff size={18} style={{ color: '#f59e0b' }} />
                                 }
                             </Flex>
                             <Box style={{ flex: 1 }}>
-                                <Text size="1" color="gray">{t('monitoring.power_status', 'Power Status')}</Text>
-                                <Text size="5" weight="bold" style={{ color: 'var(--cp-text)', display: 'block' }}>
-                                    {m.power_plugged !== undefined
-                                        ? m.power_plugged ? t('dashboard.plugged_in', 'Plugged In') : t('dashboard.on_battery', 'On Battery')
-                                        : '—'
-                                    }
-                                </Text>
+                                <Text size="1" color="gray">{t('monitoring.power_status', 'Power / Battery')}</Text>
+                                <Flex align="center" gap="2">
+                                    <Text size="5" weight="bold" style={{ color: 'var(--cp-text)', display: 'block' }}>
+                                        {m.battery_capacity != null && m.battery_capacity >= 0
+                                            ? `${m.battery_capacity}%`
+                                            : m.power_plugged ? 'AC' : '—'
+                                        }
+                                    </Text>
+                                    {m.battery_status && (
+                                        <Badge size="1" color={
+                                            m.battery_status === 'Charging' ? 'blue'
+                                            : m.battery_status === 'Full' ? 'green'
+                                            : m.battery_status === 'Discharging' ? 'amber'
+                                            : 'green'
+                                        }>
+                                            {m.battery_status === 'Charging' ? `⚡ ${t('dashboard.charging', 'Charging')}`
+                                                : m.battery_status === 'Full' ? `✓ ${t('dashboard.full', 'Full')}`
+                                                : m.battery_status === 'AC' ? t('dashboard.plugged_in', 'Plugged In')
+                                                : m.battery_status
+                                            }
+                                        </Badge>
+                                    )}
+                                </Flex>
                             </Box>
                         </Flex>
-                        <Box style={{ height: 6, borderRadius: 3, background: 'var(--cp-border)' }}>
-                            <Box style={{ height: '100%', borderRadius: 3, width: m.power_plugged ? '100%' : '30%', background: m.power_plugged ? '#22c55e' : '#f59e0b', transition: 'width 0.4s ease' }} />
-                        </Box>
+                        {/* Battery level bar — only shown when there's an actual battery */}
+                        {m.battery_capacity != null && m.battery_capacity >= 0 && (
+                            <Box style={{ height: 6, borderRadius: 3, background: 'var(--cp-border)', overflow: 'hidden' }}>
+                                <Box style={{
+                                    height: '100%', borderRadius: 3,
+                                    width: `${m.battery_capacity}%`,
+                                    background: m.battery_status === 'Charging' ? '#3b82f6'
+                                        : m.battery_capacity > 50 ? '#22c55e'
+                                        : m.battery_capacity > 20 ? '#f59e0b'
+                                        : '#ef4444',
+                                    transition: 'width 0.4s ease',
+                                }} />
+                            </Box>
+                        )}
                         <Text size="1" style={{ color: 'var(--cp-text-muted)' }}>
-                            {m.power_plugged ? t('monitoring.ac_power', 'Running on AC power') : t('monitoring.battery_power', 'Running on battery')}
+                            {m.battery_status === 'Charging'
+                                ? t('monitoring.charging_now', 'Currently charging')
+                                : m.battery_status === 'Full'
+                                    ? t('monitoring.battery_full', 'Battery full — plugged in')
+                                    : m.battery_status === 'Discharging'
+                                        ? t('monitoring.battery_power', 'Running on battery')
+                                        : t('monitoring.ac_power', 'Running on AC power')
+                            }
                         </Text>
                     </Flex>
                 </Card>
+
             </Box>
 
             {/* Charts - 2 per row */}

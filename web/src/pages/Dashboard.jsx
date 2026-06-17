@@ -233,6 +233,8 @@ export default function Dashboard() {
     const cpuTemp = mon?.cpu_temp ?? null
     const cpuFreqPct = mon?.cpu_freq_percent ?? null
     const powerPlugged = mon?.power_plugged ?? null
+    const batteryCapacity = mon?.battery_capacity ?? null  // int, -1 = no battery
+    const batteryStatus = mon?.battery_status ?? ''        // 'Charging' | 'Discharging' | 'Full' | 'AC' | ''
 
     const showAppsRow = enabled('appstore') || enabled('docker')
     const showApps = enabled('appstore')
@@ -385,16 +387,35 @@ export default function Dashboard() {
                                         <Text size="2" color="gray">{t('dashboard.received')}</Text>
                                         <Text size="2" weight="medium" style={{ color: 'var(--cp-text)' }}>{formatBytes(netRecv)}</Text>
                                     </Flex>
-                                    {/* Power / Charging status */}
-                                    {powerPlugged !== null && (
-                                        <Flex align="center" gap="2">
+                                    {/* Power / Battery status */}
+                                    {enabled('monitoring') && mon && (
+                                        <Flex align="center" gap="2" style={{ flexWrap: 'nowrap' }}>
                                             {powerPlugged
-                                                ? <Zap size={14} style={{ color: 'var(--green-9)' }} />
-                                                : <ZapOff size={14} style={{ color: 'var(--amber-9)' }} />
+                                                ? <Zap size={14} style={{ color: 'var(--green-9)', flexShrink: 0 }} />
+                                                : <ZapOff size={14} style={{ color: 'var(--amber-9)', flexShrink: 0 }} />
                                             }
-                                            <Text size="2" color="gray">{t('dashboard.power', 'Power')}</Text>
-                                            <Badge size="1" color={powerPlugged ? 'green' : 'amber'}>
-                                                {powerPlugged ? t('dashboard.plugged_in', 'Plugged In') : t('dashboard.on_battery', 'On Battery')}
+                                            <Text size="2" color="gray">
+                                                {batteryCapacity != null && batteryCapacity >= 0
+                                                    ? `${t('dashboard.battery', 'Battery')}: ${batteryCapacity}%`
+                                                    : t('dashboard.power', 'Power')
+                                                }
+                                            </Text>
+                                            <Badge
+                                                size="1"
+                                                color={
+                                                    batteryStatus === 'Charging' ? 'blue'
+                                                    : batteryStatus === 'Full' ? 'green'
+                                                    : batteryStatus === 'Discharging' ? 'amber'
+                                                    : batteryStatus === 'AC' ? 'green'
+                                                    : powerPlugged ? 'green' : 'amber'
+                                                }
+                                            >
+                                                {batteryStatus === 'Charging' ? `⚡ ${t('dashboard.charging', 'Charging')}`
+                                                    : batteryStatus === 'Full' ? `✓ ${t('dashboard.full', 'Full')}`
+                                                    : batteryStatus === 'Discharging' ? t('dashboard.discharging', 'Discharging')
+                                                    : batteryStatus === 'AC' ? t('dashboard.plugged_in', 'Plugged In')
+                                                    : powerPlugged ? t('dashboard.plugged_in', 'Plugged In') : t('dashboard.on_battery', 'On Battery')
+                                                }
                                             </Badge>
                                         </Flex>
                                     )}
