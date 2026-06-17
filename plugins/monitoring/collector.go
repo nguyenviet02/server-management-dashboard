@@ -15,7 +15,6 @@ import (
 	"github.com/shirou/gopsutil/v4/load"
 	"github.com/shirou/gopsutil/v4/mem"
 	"github.com/shirou/gopsutil/v4/net"
-	"github.com/shirou/gopsutil/v4/sensors"
 )
 
 // Collector gathers system and container metrics.
@@ -85,28 +84,13 @@ func (c *Collector) CollectSystem() (*MetricSnapshot, error) {
 		snap.NetSentBytes = netIO[0].BytesSent
 	}
 
-	// CPU Temperature via sensors
-	temps, terr := sensors.SensorsTemperatures()
-	if terr == nil {
-		var maxTemp float64
-		for _, t := range temps {
-			s := strings.ToLower(t.SensorKey)
-			if strings.Contains(s, "cpu") || strings.Contains(s, "core") || strings.Contains(s, "package") || strings.Contains(s, "k10temp") || strings.Contains(s, "coretemp") {
-				if t.Temperature > maxTemp {
-					maxTemp = t.Temperature
-				}
-			}
-		}
-		// Fallback: use the highest sensor reading if no CPU-specific sensors found
-		if maxTemp == 0 && len(temps) > 0 {
-			for _, t := range temps {
-				if t.Temperature > maxTemp && t.Temperature < 120 {
-					maxTemp = t.Temperature
-				}
-			}
-		}
-		snap.CpuTemp = maxTemp
+	// CPU Temperature via lm-sensors (`sensors -j`) with thermal zone fallback
+	cpuTemp, sensorsOK := readLmSensorsTemp()
+	if cpuTemp == 0 {
+		cpuTemp = readThermalZoneTemp()
 	}
+	snap.CpuTemp = cpuTemp
+	snap.SensorsInstalled = sensorsOK
 
 	// CPU Frequency percentage (current / max)
 	cpuFreqs, ferr := cpu.Info()
@@ -290,4 +274,111 @@ func parseBytes(s string) uint64 {
 	default:
 		return uint64(val)
 	}
+}
+
+// readLmSensorsTemp runs `sensors -j` (lm-sensors package) and returns the
+// highest CPU-related temperature found. Returns (temp °C, sensorsInstalled bool).
+func readLmSensorsTemp() (float64, bool) {
+	_, err := exec.LookPath("sensors")
+	if err != nil {
+		return 0, false
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "sensors", "-j")
+	out, err := cmd.Output()
+	if err != nil {
+		return 0, true
+	}
+
+	var raw map[string]json.RawMessage
+	if err := json.Unmarshal(out, &raw); err != nil {
+		return 0, true
+	}
+
+	var maxTemp float64
+	for chipName, chipData := range raw {
+		var chip map[string]json.RawMessage
+		if err := json.Unmarshal(chipData, &chip); err != nil {
+			continue
+		}
+
+		chipLower := strings.ToLower(chipName)
+		isCPUChip := strings.Contains(chipLower, "coretemp") ||
+			strings.Contains(chipLower, "k10temp") ||
+			strings.Contains(chipLower, "cpu") ||
+			strings.Contains(chipLower, "zenpower")
+
+		for featureName, featureData := range chip {
+			if featureName == "Adapter" {
+				continue
+			}
+
+			featureLower := strings.ToLower(featureName)
+			isCPUFeature := strings.Contains(featureLower, "package") ||
+				strings.Contains(featureLower, "core") ||
+				strings.Contains(featureLower, "cpu") ||
+				strings.Contains(featureLower, "tdie") ||
+				strings.Contains(featureLower, "tctl")
+
+			if !isCPUChip && !isCPUFeature {
+				continue
+			}
+
+			var feature map[string]float64
+			if err := json.Unmarshal(featureData, &feature); err != nil {
+				continue
+			}
+
+			for key, val := range feature {
+				if strings.HasSuffix(key, "_input") && val > 0 && val < 120 {
+					if val > maxTemp {
+						maxTemp = val
+					}
+				}
+			}
+		}
+	}
+
+	return maxTemp, true
+}
+
+// readThermalZoneTemp reads CPU temperature from /sys/class/thermal/thermal_zone1/temp
+// and other thermal zones if zone1 doesn't exist.
+func readThermalZoneTemp() float64 {
+	paths := []string{
+		"/sys/class/thermal/thermal_zone1/temp",
+		"/sys/class/thermal/thermal_zone0/temp",
+	}
+
+	if entries, err := os.ReadDir("/sys/class/thermal"); err == nil {
+		for _, e := range entries {
+			if strings.HasPrefix(e.Name(), "thermal_zone") {
+				p := "/sys/class/thermal/" + e.Name() + "/temp"
+				alreadyIn := false
+				for _, existing := range paths {
+					if existing == p {
+						alreadyIn = true
+						break
+					}
+				}
+				if !alreadyIn {
+					paths = append(paths, p)
+				}
+			}
+		}
+	}
+
+	for _, p := range paths {
+		data, err := os.ReadFile(p)
+		if err == nil {
+			var tempMilli int
+			if _, err := fmt.Sscanf(strings.TrimSpace(string(data)), "%d", &tempMilli); err == nil && tempMilli > 0 {
+				return float64(tempMilli) / 1000.0
+			}
+		}
+	}
+	return 0
 }

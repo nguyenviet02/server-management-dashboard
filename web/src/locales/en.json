@@ -1237,6 +1237,7 @@
   "monitoring": {
     "title": "System Monitoring",
     "subtitle": "Real-time system metrics, historical charts, and alerts",
+    "lm_sensors_warning": "lm-sensors is not installed on the server. Falling back to reading thermal zones.",
     "period_1h": "1 Hour",
     "period_6h": "6 Hours",
     "period_24h": "24 Hours",

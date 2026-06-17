@@ -27,6 +27,7 @@ type MetricRecord struct {
 	PowerPlugged   bool      `json:"power_plugged"`
 	BatteryCapacity int      `json:"battery_capacity"`
 	BatteryStatus  string    `json:"battery_status"`
+	SensorsInstalled bool    `json:"sensors_installed"`
 }
 
 func (MetricRecord) TableName() string { return "plugin_monitoring_metrics" }
@@ -135,4 +136,5 @@ type MetricSnapshot struct {
 	PowerPlugged   bool    `json:"power_plugged"`
 	BatteryCapacity int    `json:"battery_capacity"`
 	BatteryStatus  string  `json:"battery_status"`
+	SensorsInstalled bool  `json:"sensors_installed"`
 }

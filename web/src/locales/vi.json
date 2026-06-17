@@ -1237,6 +1237,7 @@
   "monitoring": {
     "title": "Giám sát hệ thống",
     "subtitle": "Chỉ số hệ thống thời gian thực, biểu đồ lịch sử và cảnh báo",
+    "lm_sensors_warning": "Package lm-sensors chưa được cài đặt trên máy chủ. Đang chuyển sang đọc từ thermal zones.",
     "period_1h": "1 giờ",
     "period_6h": "6 giờ",
     "period_24h": "24 giờ",

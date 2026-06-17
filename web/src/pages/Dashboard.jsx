@@ -231,7 +231,7 @@ export default function Dashboard() {
     const netSent = mon?.net_sent_bytes
     const netRecv = mon?.net_recv_bytes
     const cpuTemp = mon?.cpu_temp ?? null
-    const cpuFreqPct = mon?.cpu_freq_percent ?? null
+    const sensorsInstalled = mon?.sensors_installed ?? true
     const powerPlugged = mon?.power_plugged ?? null
     const batteryCapacity = mon?.battery_capacity ?? null  // int, -1 = no battery
     const batteryStatus = mon?.battery_status ?? ''        // 'Charging' | 'Discharging' | 'Full' | 'AC' | ''
@@ -307,7 +307,10 @@ export default function Dashboard() {
                         value={`${cpuTemp.toFixed(1)}°C`}
                         color={cpuTemp > 80 ? 'red' : cpuTemp > 60 ? 'amber' : 'green'}
                         loading={loading}
-                        tooltip={cpuTemp > 80 ? t('dashboard.temp_critical', 'Temperature is critical!') : cpuTemp > 60 ? t('dashboard.temp_warm', 'Temperature is elevated') : t('dashboard.temp_normal', 'Temperature is normal')}
+                        tooltip={
+                            (!sensorsInstalled ? `${t('monitoring.lm_sensors_warning', 'lm-sensors is not installed on the server. Falling back to reading thermal zones.')} ` : '') +
+                            (cpuTemp > 80 ? t('dashboard.temp_critical', 'Temperature is critical!') : cpuTemp > 60 ? t('dashboard.temp_warm', 'Temperature is elevated') : t('dashboard.temp_normal', 'Temperature is normal'))
+                        }
                     />
                 )}
             </Grid>
@@ -345,14 +348,7 @@ export default function Dashboard() {
                                         detail={swapPct != null ? `${swapPct.toFixed(1)}% — ${formatBytes(swapUsed)} / ${formatBytes(swapTotal)}` : '-'}
                                     />
                                 )}
-                                {/* CPU Pin (Frequency) % */}
-                                {cpuFreqPct != null && cpuFreqPct > 0 && (
-                                    <ProgressBar
-                                        label={t('dashboard.cpu_pin', 'CPU Pin (Freq %)')}
-                                        percent={cpuFreqPct}
-                                        detail={`${cpuFreqPct.toFixed(1)}%`}
-                                    />
-                                )}
+
                                 {/* Temperature bar */}
                                 {cpuTemp != null && cpuTemp > 0 && (
                                     <Box mb="3">
@@ -374,6 +370,11 @@ export default function Dashboard() {
                                                 transition: 'width 0.3s ease',
                                             }} />
                                         </div>
+                                        {!sensorsInstalled && (
+                                            <Text size="1" color="amber" style={{ display: 'block', marginTop: 4 }}>
+                                                ⚠️ {t('monitoring.lm_sensors_warning', 'lm-sensors is not installed on the server. Falling back to reading thermal zones.')}
+                                            </Text>
+                                        )}
                                     </Box>
                                 )}
                                 <Flex gap="5" mt="2" align="center" wrap="wrap">

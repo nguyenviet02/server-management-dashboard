@@ -119,6 +119,7 @@ func (s *Service) collectOnce() {
 		PowerPlugged:    snap.PowerPlugged,
 		BatteryCapacity: snap.BatteryCapacity,
 		BatteryStatus:   snap.BatteryStatus,
+		SensorsInstalled: snap.SensorsInstalled,
 	}
 	if err := s.db.Create(&record).Error; err != nil {
 		s.logger.Error("persist metric record", "err", err)

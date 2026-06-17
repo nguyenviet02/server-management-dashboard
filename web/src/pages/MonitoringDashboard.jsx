@@ -372,6 +372,17 @@ export default function MonitoringDashboard({ embedded }) {
                 </Button>
             </Flex>
 
+            {m.sensors_installed === false && (
+                <Callout.Root color="amber" mb="4" size="1">
+                    <Callout.Icon>
+                        <AlertTriangle size={16} />
+                    </Callout.Icon>
+                    <Callout.Text>
+                        {t('monitoring.lm_sensors_warning', 'lm-sensors is not installed on the server. Falling back to reading thermal zones.')}
+                    </Callout.Text>
+                </Callout.Root>
+            )}
+
             {/* Real-time metric cards */}
             <Box style={{
                 display: 'grid',
@@ -406,14 +417,7 @@ export default function MonitoringDashboard({ embedded }) {
                     detail={`\u2193 ${formatBytes(m.net_recv_bytes)}/s  \u2191 ${formatBytes(m.net_sent_bytes)}/s`}
                     color="#8b5cf6"
                 />
-                {/* CPU Frequency (Pin %) */}
-                <MetricCard
-                    icon={Cpu}
-                    title={t('monitoring.cpu_freq', 'CPU Pin (Freq %)')}
-                    percent={m.cpu_freq_percent}
-                    detail={m.cpu_freq_percent != null ? `${formatPercent(m.cpu_freq_percent)} of max` : 'N/A'}
-                    color={m.cpu_freq_percent > 90 ? '#ef4444' : m.cpu_freq_percent > 70 ? '#f59e0b' : '#6366f1'}
-                />
+
                 {/* CPU Temperature */}
                 <MetricCard
                     icon={Thermometer}
@@ -587,25 +591,6 @@ export default function MonitoringDashboard({ embedded }) {
                     </ResponsiveContainer>
                 </ChartCard>
 
-                {/* CPU Pin (Frequency %) chart */}
-                <ChartCard title={t('monitoring.cpu_freq_chart', 'CPU Pin — Frequency %')}>
-                    <ResponsiveContainer width="100%" height="100%">
-                        <AreaChart data={chartData}>
-                            <CartesianGrid strokeDasharray="3 3" stroke="var(--cp-border)" />
-                            <XAxis dataKey="time" tick={{ fontSize: 11, fill: 'var(--cp-text-muted)' }} />
-                            <YAxis domain={[0, 100]} tick={{ fontSize: 11, fill: 'var(--cp-text-muted)' }} unit="%" />
-                            <Tooltip
-                                contentStyle={{ background: 'var(--cp-card)', border: '1px solid var(--cp-border)', borderRadius: 6 }}
-                                labelStyle={{ color: 'var(--cp-text)' }}
-                                formatter={(v) => `${Number(v).toFixed(1)}%`}
-                            />
-                            <Area
-                                type="monotone" dataKey="cpu_freq" name={t('monitoring.cpu_freq', 'CPU Freq %')}
-                                stroke="#6366f1" fill="#6366f1" fillOpacity={0.15}
-                            />
-                        </AreaChart>
-                    </ResponsiveContainer>
-                </ChartCard>
 
                 {/* CPU Temperature chart */}
                 <ChartCard title={t('monitoring.cpu_temp_chart', 'CPU Temperature (°C)')}>
